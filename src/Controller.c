@@ -12,7 +12,6 @@ int main(void)
 {
   DDRA = 0;          // put PORTA into input mode
   DDRA |= (1<<PA3);  // PA3 output mode
-  uint8_t a = PINA;  // Digital input for Port A
   PORTA = 0;         // All digital outputs of A are LOW
   PORTA |= (1<<PA7); // enable internal pullup PA7 (as it is in input mode)
 
@@ -23,7 +22,7 @@ int main(void)
 
   while(1) //main loop
   {
-    if (!(PINA & (1<<PA7))) // if button is pressed (LOW is pressed)
+    if (!(PINA & (1<<PA7))) // if button is pressed (LOW is pressed) // PINA is input register of port A
     {
       PORTA |= (1<<PA3);
     }
