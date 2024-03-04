@@ -4,20 +4,33 @@
 
 //include this .c file's header file
 #include "Controller.h"
+#include "../lib/adc/adc.h" // minimal adc lib
 
 //static function prototypes, functions only called in this file
 
 int main(void)
 {
-  DDRA = 0xFF;//put PORTA into output mode
-  PORTA = 0; 
-  while(1)//main loop
+  DDRA = 0;          // put PORTA into input mode
+  DDRA |= (1<<PA3);  // PA3 output mode
+  uint8_t a = PINA;  // Digital input for Port A
+  PORTA = 0;         // All digital outputs of A are LOW
+  PORTA |= (1<<PA7); // enable internal pullup PA7 (as it is in input mode)
+
+  adc_init(); // initialises ADC
+  _delay_ms(20);
+
+  uint16_t adcVal = 0; // variable which input will be assigned to
+
+  while(1) //main loop
   {
-    _delay_ms(500);     //500 millisecond delay
-    PORTA |= (1<<PA3);  // note here PA3 is just an alias for the number 3
-                        // this line is equivalent to PORTA = PORTA | 0b00001000   which writes a HIGH to pin 3 of PORTA
-    _delay_ms(500); 
-    PORTA &= ~(1<<PA3); // this line is equivalent to PORTA = PORTA & (0b11110111)  which writes a HIGH to pin 3 of PORTA
+    if (!(PINA & (1<<PA7))) // if button is pressed (LOW is pressed)
+    {
+      PORTA |= (1<<PA3);
+    }
+    else{
+      PORTA &= ~(1<<PA3);
+    }
+    adcVal = adc_read(3); // read voltage at ADC3 // returns 10-bit value
   }
   return(1);
-}//end main 
+} //end main 
