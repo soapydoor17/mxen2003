@@ -21,17 +21,9 @@ int main(void)
 
   while(1) //main loop
   {
-    if (!(PINF & (1<<PF7))) // if button is pressed read PF5 else read PF3
-    {
-      reading = adc_read(5);
-    }
-    else{
-      reading = adc_read(3);
-    }
-
+    reading = adc_read(5);
     reading = reading >> 2; // most significant bits shift down so its 8 bit
     PORTC = reading;        // display 8 bit reading on LEDs
-
   }
   return(1);
 } //end main 
