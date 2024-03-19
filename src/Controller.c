@@ -24,14 +24,13 @@ int main(void)
 
 	// Port Initialising
 	DDRF = 0;			// PortF input for range sensor
-	DDRD = 0;			// PortA input for buttons
+	DDRD = 0;			// PortD input for buttons
 	PORTD |=(1<<PD0);	// pull-up resistors for buttons
 	PORTD |=(1<<PD1);
 	PORTD |=(1<<PD2);
 	PORTD |=(1<<PD3);	
 	
 	// Interrupt Initialsing
-	DDRD &= ~(1<<PD0); // INT0 input mode
 	EICRA |= (1<<ISC01);
 	EICRA &= ~(1<<ISC00); // INT0 set falling edge trigger
 	EIMSK |= (1<<INT0);   // INT0 enable
