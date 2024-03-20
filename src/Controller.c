@@ -8,19 +8,33 @@
 
 //static function prototypes, functions only called in this file
 bool timer_start = 1;
+uint16_t timer_val = 0;
 
 int main(void)
 {
-
-  adc_init(); // initialse ADC
-	lcd_init(); // initialise LCD
-	_delay_ms(20);
-
-  DDRD = 0;			// PortD input for button
-  PORTD = 0;  // PinD0 for button
-	PORTD |=(1<<PD0);	// pull-up resistors for button
   
   cli();
+  adc_init(); // initialse ADC
+  lcd_init(); // initialise LCD
+  _delay_ms(20);
+
+	//button init stuff
+  DDRD = 0;			// PortD input for button
+  PORTD = 0;  // PinD0 for button
+  PORTD |=(1<<PD0);	// pull-up resistors for button
+
+	//LCD init stuff
+  EICRA |= (1<<ISC01);
+  EICRA &= ~(1<<ISC00); // INT0 set falling edge trigger
+  EIMSK |= (1<<INT0);   // INT0 enable
+	
+
+
+  // declare and initialise strings for LCD
+  char line2_string[33] = {0};
+
+  //timer init stuff
+	
   TTCR1A = 0;
   TTCR1B |= (1<<WGM12)|(1<<WGM13)|(1<<CS10);  //timer set for mode 12 (CTC) AND prescaler of 1
   TCNT1 = 0;
@@ -31,10 +45,21 @@ int main(void)
   while(1) //main loop
   {
     if timer_start == 1;
-      LCD
+    {
+		  //LCD displays updating time
+	    lcd_home();
+	    lcd_puts("TIMER");
+	    
+	    timer_val = TCNT1; // updates timer_val (prob have to update to make readable)
+    }
+    else
+	  {
+	  
    
 
-  }
+  	  }
+    lcd_goto(0x40);
+    sprintf(line2_string, "%u", timer_val);
   return(1);
 } //end main 
 
