@@ -48,13 +48,15 @@ int main(void)
     {
 		  //LCD displays updating time
 	    lcd_home();
-	    lcd_puts("TIMER");
+	    lcd_puts("TIMER (s):");
 	    
 	    timer_val = TCNT1; // updates timer_val (prob have to update to make readable)
     }
     else
 	  {
-	  
+	    lcd_home();
+	    lcd_puts("TIMER||STOP");
+	    OC1A = 0;
    
 
   	  }
@@ -77,6 +79,6 @@ ISR(INT0_vect)
 	if((currTime-prevTime) < DEBOUNCE_PERIOD)
 	{
 		timer_start ^= 1;
-    prevTime = currTime;
+     		prevTime = currTime;
 	}
 }
