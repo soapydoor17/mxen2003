@@ -24,6 +24,10 @@ int main(void)
   DDRD = 0;                        // put PORTD into input mode
   PORTD |= (1<<PD0) | (1<<PD1);    // enable pull-up for PD0 and PD1
 
+  DDRB = 0xFF;
+  	uint16_t compValue = 0;
+	0CR1A = compValue;
+
   // Button Interrupts
   EICRA |= (1<<ISC01);
   EICRA &= ~(1<<ISC00);            // INT0 to falling edge trigger
@@ -34,10 +38,10 @@ int main(void)
 
   // Timer Interrups
   TCCR1A = 0;
-  TCCR1B |= (1<<WGM12) | (1<<CS11);
+  TCCR1B |= (1<<WGM13) | (1<<CS11);
   TCNT1 = 0;
-  OCR1A = 19999;
-  TIMSK1 = (1<<OCIE1A);
+  ICR1 = 20000;
+  TIMSK1 = (1<<ICIE1);
 
   // library initialising
   
@@ -83,17 +87,7 @@ ISR(INT1_vect)
 }
 
 // Timer Interrupt
-ISR(TIMER1_COMPA_vect)
+ISR(TIMER1_CAPT_vect)
 {
-  t_millis += 1;
-  if (t_millis > 99)
-  {
-    t_secs += 1;
-    t_millis =0;
-  }
-  if (t_secs > 59)
-  {
-    t_mins += 1;
-    t_secs =0;
-  }
+    }
 }
