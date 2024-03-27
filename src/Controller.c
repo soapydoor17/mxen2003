@@ -15,6 +15,8 @@ volatile uint16_t t_mins = 0;
 
 int main(void)
 {
+  cli();
+	
   // Variable Initialising
   char line1_string[33] ={0};
 
@@ -32,12 +34,13 @@ int main(void)
 
   // Timer Interrups
   TCCR1A = 0;
-  TCCR1B |= (1<<WGM12) | (1<<CS11);
+  TCCR1B |= (1<<WGM12) | (1<<CS11)|(1<<CS10);;
   TCNT1 = 0;
   OCR1A = 19999;
   TIMSK1 = (1<<OCIE1A);
 
   // library initialising
+  
   lcd_init();
   _delay_ms(20);
 
