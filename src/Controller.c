@@ -9,8 +9,8 @@
 //static function prototypes, functions only called in this file
 
 // Global Variables
-volatile uint16_t t_millis = 0;
-volatile uint16_t t_secs = 0;
+volatile uint8_t t_millis = 0;
+volatile uint8_t t_secs = 0;
 volatile uint16_t t_mins = 0;
 
 int main(void)
@@ -34,7 +34,7 @@ int main(void)
 
   // Timer Interrups
   TCCR1A = 0;
-  TCCR1B |= (1<<WGM12) | (1<<CS11)|(1<<CS10);;
+  TCCR1B |= (1<<WGM12) | (1<<CS11);
   TCNT1 = 0;
   OCR1A = 19999;
   TIMSK1 = (1<<OCIE1A);
@@ -74,10 +74,11 @@ ISR(INT1_vect)
 	static uint32_t prevTime = 0;
 	if((currTime-prevTime) < DEBOUNCE_PERIOD)
 	{
-		TCNT1 = 0;
-    t_millis = 0;
-    t_secs = 0;
-    t_mins = 0;
+	TCNT1 = 0;
+   	t_millis = 0;
+	t_secs = 0;
+        t_mins = 0;
+	prevTime = currTime;
 	}
 }
 
