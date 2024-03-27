@@ -1,4 +1,4 @@
-//Example ATmega2560 Project
+//Example ATmega2560 
 //File: ATmega2560Project.c
 //An example file for second year mechatronics project
 
