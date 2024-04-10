@@ -17,7 +17,7 @@ int main(void)
 
   // Port Initialising
   DDRC = 0;                        // put PORTC into input mode
-  DDRB |= (1<<PB5);
+  DDRB |= (1<<PB5);		//pinB5 output mode
 
 
   // Timer Interrups
