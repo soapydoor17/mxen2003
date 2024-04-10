@@ -42,16 +42,10 @@ int main(void)
   while(1) //main loop
   {
 	  reading = adc_read(5);	//takes joystick reading from pin F5
-	  reading = reading >> 2; //convert to 8 bit
-	  compVal = reading/0xffff * ICR1;
+	  compVal = reading*1000/1023 + ICR1; //converts reading to a ratio of total possible power.  
+	
 	  OCR1A = compVal;
   }
   return(1);
 } //end main 
 
-
-
-// Timer Interrupt
-ISR(TIMER1_CAPT_vect)
-{
-}
