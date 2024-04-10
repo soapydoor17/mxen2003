@@ -18,6 +18,7 @@ int main(void)
   // Port Initialising
   DDRC = 0;                        // put PORTC into input mode
   DDRB |= (1<<PB5);		//pinB5 output mode
+  uint16_t reading = 0;  // where joystick reading is assigned
 
 
   // Timer Interrups
@@ -40,6 +41,10 @@ int main(void)
 
   while(1) //main loop
   {
+	  reading = adc_read(5);	//takes joystick reading from pin F5
+	  reading = reading >> 2; //convert to 8 bit
+	  compVal = reading * <constant>;
+	  OCR1A = compVal;
   }
   return(1);
 } //end main 
@@ -49,5 +54,4 @@ int main(void)
 // Timer Interrupt
 ISR(TIMER1_CAPT_vect)
 {
-
 }
