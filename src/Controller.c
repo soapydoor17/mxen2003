@@ -17,7 +17,7 @@ int main(void)
 
   // Port Initialising
   DDRC = 0;                        // put PORTC into input mode
-  DDRB |= (1<<PB5);		//pinB5 output mode
+  DDRB |= (1<<PB5);		//pinB5 output mode - toggled by pwm
   uint16_t reading = 0;  // where joystick reading is assigned
 
 
@@ -43,7 +43,7 @@ int main(void)
   {
 	  reading = adc_read(5);	//takes joystick reading from pin F5
 	  reading = reading >> 2; //convert to 8 bit
-	  compVal = reading * <constant>;
+	  compVal = reading/0xffff * ICR1;
 	  OCR1A = compVal;
   }
   return(1);
