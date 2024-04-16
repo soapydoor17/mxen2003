@@ -4,6 +4,7 @@
 
 //include this .c file's header file
 #include "Robot.h"
+#include "../lib/adc/adc.h" // minimal adc lib
 
 //static function prototypes, functions only called in this file
 
