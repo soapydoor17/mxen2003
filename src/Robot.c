@@ -11,6 +11,11 @@ uint16_t cmVal = 0;
 uint32_t current_ms = 0;
 uint32_t last_send_ms = 0;
 
+//file scope variables
+static char serial_string[200] = {0};
+volatile uint8_t dataByte1=0, dataByte2=0, dataByte3=0, dataByte4=0;		// data bytes received
+volatile bool new_message_received_flag=false;
+
 int main(void)
 {
 	// initialisation section, runs once
@@ -48,7 +53,66 @@ int main(void)
 		serial2_write_byte(254); //send stop byte
 	}
 
+	//if a new byte has been received
+	if(new_message_received_flag) 
+	{
+		// now that a full message has been received, we can process the whole message
+		// the code in this section will implement the result of your message
+		sprintf(serial_string, "received: 1:%4d, 2:%4d , 3:%4d , 4:%4d \n", dataByte1, dataByte2, dataByte3, dataByte4);
+		serial0_print_string(serial_string);  // print the received bytes to the USB serial to make sure the right messages are received
+
+		new_message_received_flag=false;	// set the flag back to false
+	}
 
   } //end main
   return(1);
+}
+
+ISR(USART2_RX_vect)  // ISR executed whenever a new byte is available in the serial buffer
+{
+	static uint8_t recvByte1=0, recvByte2=0, recvByte3=0, recvByte4=0;		// data bytes received
+	static uint8_t serial_fsm_state=0;									// used in the serial receive ISR
+	uint8_t	serial_byte_in = UDR2; //move serial byte into variable
+	
+	switch(serial_fsm_state) //switch by the current state
+	{
+		case 0:
+		//do nothing, if check after switch case will find start byte and set serial_fsm_state to 1
+		break;
+		case 1: //waiting for first parameter
+		recvByte1 = serial_byte_in;
+		serial_fsm_state++;
+		break;
+		case 2: //waiting for second parameter
+		recvByte2 = serial_byte_in;
+		serial_fsm_state++;
+		break;
+		case 3: //waiting for second parameter
+		recvByte3 = serial_byte_in;
+		serial_fsm_state++;
+		break;
+		case 4: //waiting for second parameter
+		recvByte4 = serial_byte_in;
+		serial_fsm_state++;
+		break;
+		case 5: //waiting for stop byte
+		if(serial_byte_in == 0xFE) //stop byte
+		{
+			// now that the stop byte has been received, set a flag so that the
+			// main loop can execute the results of the message
+			dataByte1 = recvByte1;
+			dataByte2 = recvByte2;
+			dataByte3 = recvByte3;
+			dataByte4 = recvByte4;
+			
+			new_message_received_flag=true;
+		}
+		// if the stop byte is not received, there is an error, so no commands are implemented
+		serial_fsm_state = 0; //do nothing next time except check for start byte (below)
+		break;
+	}
+	if(serial_byte_in == 0xFF) //if start byte is received, we go back to expecting the first data byte
+	{
+		serial_fsm_state=1;
+	}
 }
