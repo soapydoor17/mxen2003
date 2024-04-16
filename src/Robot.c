@@ -8,8 +8,8 @@
 uint16_t currVal = 0;
 uint16_t cmVal = 0;
 //keeps track of time since last send
-uint16_t current_ms = 0;
-uint16_t last_send_ms = 0;
+uint32_t current_ms = 0;
+uint32_t last_send_ms = 0;
 
 int main(void)
 {
@@ -29,10 +29,10 @@ int main(void)
 	while(1)
 	{	
 		// Reading Range sensor - cmVal gives range in cm
-		currVal =  adc_read(0);
-    cmVal = 7000/currVal - 6; //!MAY NEED TO BE RECALLIBRATED - USE WEEK 5 CODE TO DO SO!
+	currVal =  adc_read(0);
+    	cmVal = 7000/currVal - 6; //!MAY NEED TO BE RECALLIBRATED - USE WEEK 5 CODE TO DO SO!
 
-    // Transmitting 
+    	// Transmitting 
 		current_ms = milliseconds_now();
 	
 	//sending section
