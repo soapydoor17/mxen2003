@@ -8,7 +8,9 @@
 uint16_t currVal = 0;
 uint16_t cmVal = 0;
 uint8_t cmVal1 = 0;	//reduces resolution of cmVal into 8nit so can be sent; most significant bits
-uint16_t JOYreading = 0;  // where joystick reading is assigned
+
+uint16_t compVal = 10000; // converted to 16 bit from 8 bit recieve
+volatile uint8_t compValREC = 1000; //recieved value 
 
 //keeps track of time since last send
 uint32_t current_ms = 0;
@@ -32,6 +34,12 @@ int main(void)
 	DDRF = 0;			// PortF input for range sensor
 
   	DDRB |= (1<<PB5);		//pinB5 output mode - toggled by pwm
+
+	// PWM Timer Interrups
+  	TCCR1A = (1<<COM1A1);
+  	TCCR1B |= (1<<WGM13) | (1<<CS11);
+  	TCNT1 = 0;
+  	ICR1 = 20000;
   	
 	
 	sei(); // set up interrupts
@@ -51,6 +59,8 @@ int main(void)
 	if( (current_ms-last_send_ms) >= 100) //sending rate controlled here
 	{
 		last_send_ms = current_ms;
+		if (sendDataByte1>253) //Causes byte 1 to wrap back to 0 when exceeding 253
+		{cmVal1 = 0;}
 		
 		serial2_write_byte(255); //send start byte
 		serial2_write_byte(cmVal1); //send byte value
@@ -62,15 +72,14 @@ int main(void)
 	{
 		// now that a full message has been received, we can process the whole message
 		// the code in this section will implement the result of your message
-		sprintf(serial_string, "received: 1:%4d, 2:%4d , 3:%4d , 4:%4d \n", dataByte1, dataByte2, dataByte3, dataByte4);
+		sprintf(serial_string, "received: 1:%4d\n", dataByte1);
 		serial0_print_string(serial_string);  // print the received bytes to the USB serial to make sure the right messages are received
-
+		compValREC= dataByte1;
 		new_message_received_flag=false;	// set the flag back to false
 	}
 
-	//Servo motor run
-	compVal = reading*1000/1023 + ICR1; //converts reading to a ratio of total possible power.  
-	
+	//Servo motor run 
+	CompVal = CompValREC << 2;
 	OCR1A = compVal;
 
   } //end main
@@ -110,9 +119,6 @@ ISR(USART2_RX_vect)  // ISR executed whenever a new byte is available in the ser
 			// now that the stop byte has been received, set a flag so that the
 			// main loop can execute the results of the message
 			dataByte1 = recvByte1;
-			dataByte2 = recvByte2;
-			dataByte3 = recvByte3;
-			dataByte4 = recvByte4;
 			
 			new_message_received_flag=true;
 		}
