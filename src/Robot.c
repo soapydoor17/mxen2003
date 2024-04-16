@@ -4,39 +4,24 @@
 #include <avr/interrupt.h>
 #include "../lib/adc/adc.h" // minimal adc lib
 
-
-#define DEBOUNCE_PERIOD 100
-
 // Global integer set up (needs to be accessed by interrupts)
 uint16_t currVal = 0;
 uint16_t cmVal = 0;
-
-//static function prototypes, functions only called in this file
+//keeps track of time since last send
+uint16_t current_ms = 0;
+uint16_t last_send_ms = 0;
 
 int main(void)
 {
 	// initialisation section, runs once
 	adc_init(); // initialse ADC
 	serial0_init(); 	// terminal communication with PC
-	serial2_init();	
+	serial2_init();		// terminal communication with Controller.c
   
 	_delay_ms(20);
 
 	// Port Initialising
 	DDRF = 0;			// PortF input for range sensor
-	DDRD = 0;			// PortD input for buttons
-  PORTD = 0;
-	PORTD |=(1<<PD0);	// pull-up resistors for button
-	
-	// Interrupt Initialsing
-	EICRA |= (1<<ISC01);
-	EICRA &= ~(1<<ISC00); // INT0 set falling edge trigger
-	EIMSK |= (1<<INT0);   // INT0 enable
-	
-
-	//variable declarations
-  // declare and initialise strings for LCD
-	char line2_string[33] = {0};
 	
 	sei(); // set up interrupts
 
