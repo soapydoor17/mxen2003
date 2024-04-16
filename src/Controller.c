@@ -1,20 +1,8 @@
 
 //include this .c file's header file
-#include "Robot.h"
+#include "Controller.h"
 #include <avr/interrupt.h>
 #include "../lib/adc/adc.h" // minimal adc lib
-
-// Global integer set up
-uint16_t currVal = 0;
-uint16_t cmVal = 0;
-uint8_t cmVal1 = 0;	//reduces resolution of cmVal into 8nit so can be sent; most significant bits
-
-uint16_t compVal = 10000; // converted to 16 bit from 8 bit recieve
-volatile uint8_t compValREC = 1000; //recieved value 
-
-//keeps track of time since last send
-uint32_t current_ms = 0;
-uint32_t last_send_ms = 0;
 
 //file scope variables
 static char serial_string[200] = {0};
@@ -25,32 +13,42 @@ int main(void)
 {
 	// initialisation section, runs once
 	adc_init(); // initialse ADC
+	lcd_init(); // initialise LCD
 	serial0_init(); 	// terminal communication with PC
 	serial2_init();		// terminal communication with Controller.c
   
 	_delay_ms(20);
 
-	// Port Initialising
-	DDRF = 0;			// PortF input for range sensor
+	//joystick setup
+	DDRF = 0;                        // put PORTF into input mode
+	uint16_t reading = 0;  // where joystick reading is assigned
+	uint16_t compVal = 10000; // calc compval (10bit)
+	uint8_t compValSEND = 1000; //sent compval (8bit)
 
-  	DDRB |= (1<<PB5);		//pinB5 output mode - toggled by pwm
+	//lcd/range sensor setup	
+	uint16_t cmVal = 0;	//CM Value used (10bit)
+	uint8_t cmValREC = 0;	//CM Value recieved (8bit)
+	char line2_string[33] = {0}; 	// declare and initialise strings for LCD
 
-	// PWM Timer Interrups
-  	TCCR1A = (1<<COM1A1);
-  	TCCR1B |= (1<<WGM13) | (1<<CS11);
-  	TCNT1 = 0;
-  	ICR1 = 20000;
-  	
+
+	//keeps track of time since last send
+	uint32_t current_ms = 0;
+	uint32_t last_send_ms = 0;
+
+
+	
 	
 	sei(); // set up interrupts
 
-	//main loop
+	
 	while(1)
 	{	
-		// Reading Range sensor - cmVal gives range in cm
-	currVal =  adc_read(0);
-    	cmVal = 7000/currVal - 6; //!MAY NEED TO BE RECALLIBRATED - USE WEEK 5 CODE TO DO SO!
-	cmVal1 = cmVal >> 2;
+	//joystick code
+	reading = adc_read(5);	//takes joystick reading from pin F5
+	compVal = reading*1000/1023 + 20000; //converts reading to a ratio of total possible power.  
+	
+	compValSEND = compVal >>2;
+
 
     	// Transmitting 
 	current_ms = milliseconds_now();
@@ -60,10 +58,10 @@ int main(void)
 	{
 		last_send_ms = current_ms;
 		if (sendDataByte1>253) //Causes byte 1 to wrap back to 0 when exceeding 253
-		{cmVal1 = 0;}
+		{compValSEND = 0;}
 		
 		serial2_write_byte(255); //send start byte
-		serial2_write_byte(cmVal1); //send byte value
+		serial2_write_byte(compValSEND); //send byte value
 		serial2_write_byte(254); //send stop byte
 	}
 
@@ -74,13 +72,20 @@ int main(void)
 		// the code in this section will implement the result of your message
 		sprintf(serial_string, "received: 1:%4d\n", dataByte1);
 		serial0_print_string(serial_string);  // print the received bytes to the USB serial to make sure the right messages are received
-		compValREC= dataByte1;
+		cmValREC= dataByte1;
 		new_message_received_flag=false;	// set the flag back to false
 	}
 
-	//Servo motor run 
-	CompVal = CompValREC << 2;
-	OCR1A = compVal;
+	//LCD Code here
+	cmVal = cmValREC << 2;
+	// Live Feed
+	lcd_home();
+	lcd_puts("Current Value:");
+	lcd_goto(0x40);
+	sprintf(line2_string, "%5u cm", cmVal);
+	lcd_puts(line2_string);
+
+	
 
   } //end main
   return(1);
