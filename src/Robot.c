@@ -4,9 +4,12 @@
 #include <avr/interrupt.h>
 #include "../lib/adc/adc.h" // minimal adc lib
 
-// Global integer set up (needs to be accessed by interrupts)
+// Global integer set up
 uint16_t currVal = 0;
 uint16_t cmVal = 0;
+uint8_t cmVal1 = 0;	//reduces resolution of cmVal into 8nit so can be sent; most significant bits
+uint16_t JOYreading = 0;  // where joystick reading is assigned
+
 //keeps track of time since last send
 uint32_t current_ms = 0;
 uint32_t last_send_ms = 0;
@@ -27,6 +30,9 @@ int main(void)
 
 	// Port Initialising
 	DDRF = 0;			// PortF input for range sensor
+
+  	DDRB |= (1<<PB5);		//pinB5 output mode - toggled by pwm
+  	
 	
 	sei(); // set up interrupts
 
@@ -36,20 +42,18 @@ int main(void)
 		// Reading Range sensor - cmVal gives range in cm
 	currVal =  adc_read(0);
     	cmVal = 7000/currVal - 6; //!MAY NEED TO BE RECALLIBRATED - USE WEEK 5 CODE TO DO SO!
+	cmVal1 = cmVal >> 2;
 
     	// Transmitting 
-		current_ms = milliseconds_now();
+	current_ms = milliseconds_now();
 	
 	//sending section
 	if( (current_ms-last_send_ms) >= 100) //sending rate controlled here
 	{
 		last_send_ms = current_ms;
+		
 		serial2_write_byte(255); //send start byte
-		serial2_write_byte(1); //send test value for first parameter
-		serial2_write_byte(2); //send test value for second parameter
-		serial2_write_byte(3); //send test value for third parameter
-		serial2_write_byte(4); //send test value for fourth parameter
-		serial2_write_byte(5); //send test value for fifth parameter
+		serial2_write_byte(cmVal1); //send byte value
 		serial2_write_byte(254); //send stop byte
 	}
 
@@ -63,6 +67,11 @@ int main(void)
 
 		new_message_received_flag=false;	// set the flag back to false
 	}
+
+	//Servo motor run
+	compVal = reading*1000/1023 + ICR1; //converts reading to a ratio of total possible power.  
+	
+	OCR1A = compVal;
 
   } //end main
   return(1);
