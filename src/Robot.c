@@ -4,17 +4,6 @@
 #include <avr/interrupt.h>
 #include "../lib/adc/adc.h" // minimal adc lib
 
-// Global integer set up
-uint16_t currVal = 0;
-uint16_t cmVal = 0;
-uint8_t cmVal1 = 0;	//reduces resolution of cmVal into 8nit so can be sent; most significant bits
-
-uint16_t compVal = 10000; // converted to 16 bit from 8 bit recieve
-volatile uint8_t compValREC = 1000; //recieved value 
-
-//keeps track of time since last send
-uint32_t current_ms = 0;
-uint32_t last_send_ms = 0;
 
 //file scope variables
 static char serial_string[200] = {0};
@@ -29,6 +18,19 @@ int main(void)
 	serial2_init();		// terminal communication with Controller.c
   
 	_delay_ms(20);
+
+	// Global integer set up
+	uint16_t currVal = 0;
+	uint16_t cmVal = 0;
+	uint8_t cmVal1 = 0;	//reduces resolution of cmVal into 8nit so can be sent; most significant bits
+
+	uint16_t compVal = 10000; // converted to 16 bit from 8 bit recieve
+	uint8_t compValREC = 1000; //recieved value 
+
+	//keeps track of time since last send
+	uint32_t current_ms = 0;
+	uint32_t last_send_ms = 0;
+
 
 	// Port Initialising
 	DDRF = 0;			// PortF input for range sensor
