@@ -1,12 +1,13 @@
 //include this .c file's header file
 #include "Controller.h"
+#include "../lib/adc/adc.h" // minimal adc lib
 #define DEBOUNCE_PERIOD 100
 //static function prototypes, functions only called in this file
 
 
 //file scope variables
 // static char serial_string[200] = {0};
-volatile uint8_t dataByte1=0;		                // data bytes received
+volatile uint8_t dataByte1=0, dataByte2=0, dataByte3=0;		                // data bytes received
 volatile bool new_message_received_flag=false;
 volatile bool freeze = 0;                       // for LCD screen controlled by interrupt
 
@@ -14,33 +15,34 @@ volatile bool freeze = 0;                       // for LCD screen controlled by 
 int main(void)
 {
 	// initialisation
-	serial0_init(); 	// terminal communication with PC
-	serial2_init();		// microcontroller communication to/from another Arduino
-  lcd_init();
-  adc_init();
-  _delay_ms(20);
-	// or loopback communication to same Arduino
+serial0_init(); 	// terminal communication with PC
+serial2_init();		// microcontroller communication to/from another Arduino
+lcd_init();
+adc_init();
+_delay_ms(20);
+// or loopback communication to same Arduino
 	
-  // variables
-	uint8_t sendDataByte1=0, sendDataByte2=0;		// data bytes sent
-	uint32_t current_ms=0, last_send_ms=0;			// used for timing the serial send
+ // variables
+uint8_t sendDataByte1=0, sendDataByte2=0;		// data bytes sent
+uint32_t current_ms=0, last_send_ms=0;			// used for timing the serial send
 
-  uint16_t rsVal=0, cmVal=0;          // current value of Range Sensor (received from robot), and cm version
-  uint16_t x_reading=0, y_reading=0;  // reading of joysticks to be sent to robot
-  char lcd_string[16] = {0};          // string to print to LCD
+uint16_t rsVal=0, cmVal=0, rsVal2=0, cmVal2=0, rsVal3=0, cmVal3=0;          // current value of Range Sensor (received from robot), and cm version
+uint16_t x_reading=0, y_reading=0;  // reading of joysticks to be sent to robot
+char lcd_string[16] = {0};          // string to print to LCD
+char serial0_sting[16] = {0};
 
-  DDRD = 0;       // Button input mode with pullup resistor
-  PORTD = (1<<PD2);
-  DDRF = 0;       // Joysticks in input mode
+DDRD = 0;       // Button input mode with pullup resistor
+PORTD = (1<<PD2);
+DDRF = 0;       // Joysticks in input mode
 
-  EICRA |= (1<<ISC21); // Falling edge trigger for button
-  EICRA &= ~(1<<ISC20); 
-  EIMSK = (1<<INT2);
+EICRA |= (1<<ISC21); // Falling edge trigger for button
+EICRA &= ~(1<<ISC20); 
+EIMSK = (1<<INT2);
 
-	UCSR2B |= (1 << RXCIE2); // Enable the USART Receive Complete interrupt (USART_RXC)
+UCSR2B |= (1 << RXCIE2); // Enable the USART Receive Complete interrupt (USART_RXC)
 	
-	milliseconds_init();
-	sei();
+milliseconds_init();
+sei();
 	
 	while(1)
 	{
@@ -51,9 +53,14 @@ int main(void)
       // Reading joysticks and convert for sending data
       x_reading = adc_read(0);
       y_reading = adc_read(1);
-
-      sendDataByte1 = x_reading *253/1023;
-      sendDataByte2 = y_reading *253/1023;
+	  sprintf(serial0_sting, "%4u;\n", x_reading);
+	  serial0_print_string(serial0_sting);  // print the received bytes to the USB serial to make sure the right messages are received
+	
+      sendDataByte1 = x_reading/4;
+	  if(sendDataByte1>253)
+	  {sendDataByte1 = 253;
+	  }
+      sendDataByte2 = (y_reading *253)/1023;
 
       last_send_ms = current_ms;
 			serial2_write_byte(0xFF); 		//send start byte = 255
@@ -66,18 +73,23 @@ int main(void)
 		if(new_message_received_flag) 
 		{
       // Convert recieved data
-      rsVal = dataByte1 * (1023) / (253);
+      rsVal = (dataByte1 * 4);
+	  rsVal2 = (dataByte2 * 4);
+	  rsVal3 = (dataByte3 * 4);
 
       // Display value on LCD
       lcd_home();
+	  lcd_puts("Current Value:");
       if (freeze == 0)
       {
         cmVal = 7000/rsVal - 6;
-        lcd_puts("Current Value:");
+		cmVal2 = 7000/rsVal2 - 6;
+		cmVal3 = 7000/rsVal3 - 6;
       }
       lcd_goto(0x40);
-      sprintf(lcd_string, "%5u cm", cmVal);
+      sprintf(lcd_string, "%4u; %4u; %4u", cmVal, cmVal2, cmVal3);
       lcd_puts(lcd_string);
+	  
 
       new_message_received_flag = false;
 		}
@@ -88,7 +100,7 @@ int main(void)
 
 ISR(USART2_RX_vect)  // ISR executed whenever a new byte is available in the serial buffer
 {
-	static uint8_t recvByte1=0;		                                    // data bytes received
+	static uint8_t recvByte1=0, recvByte2=0, recvByte3=0;		                                    // data bytes received
 	static uint8_t serial_fsm_state=0;									// used in the serial receive ISR
 	uint8_t	serial_byte_in = UDR2; //move serial byte into variable
 	
@@ -101,13 +113,23 @@ ISR(USART2_RX_vect)  // ISR executed whenever a new byte is available in the ser
 		recvByte1 = serial_byte_in;
 		serial_fsm_state++;
 		break;
-		case 2: //waiting for stop byte
+		case 2: //waiting for first parameter
+		recvByte2 = serial_byte_in;
+		serial_fsm_state++;
+		break;
+		case 3: //waiting for first parameter
+		recvByte3 = serial_byte_in;
+		serial_fsm_state++;
+		break;
+		case 4: //waiting for stop byte
 		if(serial_byte_in == 0xFE) //stop byte
 		{
 			// now that the stop byte has been received, set a flag so that the
 			// main loop can execute the results of the message
 			dataByte1 = recvByte1;
-			
+			dataByte2 = recvByte2;
+			dataByte3 = recvByte3;
+
 			new_message_received_flag=true;
 		}
 		// if the stop byte is not received, there is an error, so no commands are implemented
