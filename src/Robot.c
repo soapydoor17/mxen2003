@@ -1,5 +1,6 @@
 //include this .c file's header file
 #include "Robot.h"
+#include "../lib/adc/adc.h" // minimal adc lib
 
 //static function prototypes, functions only called in this file
 
@@ -17,20 +18,22 @@ int main(void)
 	serial2_init();		// microcontroller communication to/from another Arduino
 	// or loopback communication to same Arduino
 	
-	uint8_t sendDataByte1=0;		// data bytes sent
+	uint8_t sendDataByte1=0, sendDataByte2=0,sendDataByte3=0;		// data bytes sent
 	uint32_t current_ms=0, last_send_ms=0;			// used for timing the serial send
 
-  uint16_t rsVal = 0;       // range sensor value
+  uint16_t rsVal = 0, rsVal2 = 0, rsVal3 = 0;       // range sensor value
   uint16_t x_reading=0, y_reading=0;  // reading of joysticks to be sent to robot
-  uint16_t compVal1 = 1000, compVal2 = 1000;      // comparison values for PWM waves
+  uint16_t compVal1 = 1000; //compVal2 = 1000;      // comparison values for PWM waves
 
   DDRF = 0;               // set PORTF into input mode for range sensor
+
+  char serial0_sting[16] = {0};
 
   // setting up pwm waves n shiz
   DDRB |= (1<<PB5)|(1<<PB6);  // output mode for PORTB pins 5 and 6 (servos)
   OCR1A = compVal1;           // output comparison initialisation
-  OCR1B = compVal2;
-  TCCR1A |= (1<<COM1A1) | (1<<COM1B1); // OC1A and OC1B clear on upcount and set on downcount
+  //OCR1B = compVal2;
+  TCCR1A |= (1<<COM1A1); //| (1<<COM1B1); // OC1A and OC1B clear on upcount and set on downcount
   TCCR1B |= (1<<WGM13) | (1<<CS11);
   TCNT1 = 0;
   ICR1 = 20000;
@@ -48,28 +51,42 @@ int main(void)
 
 		current_ms = milliseconds_now();
 		//sending section
-		if(current_ms-last_send_ms >= 100) //sending rate controlled here one message every 100ms (10Hz)
+		if(current_ms-last_send_ms >= 500) //sending rate controlled here one message every 100ms (10Hz)
     {
 			rsVal = adc_read(0);
-      sendDataByte1 = rsVal * 253 / 1023;
+      		sendDataByte1 = rsVal / 4;
+			if(sendDataByte1>253)
+			{dataByte1 = 253;} 
+			rsVal2 = adc_read(1);
+			sendDataByte2 = rsVal2 /4;
+			if(sendDataByte2>253)
+			{dataByte1 = 253;}
+			rsVal3 = adc_read(2);
+			sendDataByte3 = rsVal3 / 4;
+			if(sendDataByte3>253)
+			{dataByte1 = 253;}
+
 			
 			last_send_ms = current_ms;
 			serial2_write_byte(0xFF); 		//send start byte = 255
 			serial2_write_byte(sendDataByte1); 	//send first data byte: must be scaled to the range 0-253
+			serial2_write_byte(sendDataByte2);
+			serial2_write_byte(sendDataByte3);
 			serial2_write_byte(0xFE); 		//send stop byte = 254
 		}
 
 		//if a new byte has been received
 		if(new_message_received_flag) 
 		{
-      x_reading = dataByte1 *1023/253;
-      y_reading = dataByte2 *1023/253;
+      x_reading = dataByte1 *4;
+      y_reading = (dataByte2 *1023) /253;
 
       compVal1 = x_reading + 1000;
-      compVal2 = y_reading + 1000;
-
+      //compVal2 = y_reading + 1000;
+	  sprintf(serial0_sting, "%4u;\n", dataByte1);
+	  serial0_print_string(serial0_sting);  // print the received bytes to the USB serial to make sure the right messages are received
       OCR1A = compVal1;
-      OCR1B = compVal2;
+      //OCR1B = compVal2;
 
 			new_message_received_flag=false;	// set the flag back to false
 		}
