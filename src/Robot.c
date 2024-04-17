@@ -63,10 +63,12 @@ int main(void)
 		last_send_ms = current_ms;
 		if (sendDataByte1>253) //Causes byte 1 to wrap back to 0 when exceeding 253
 		{cmVal1 = 0;}
-		
+		else
+		{
 		serial2_write_byte(255); //send start byte
 		serial2_write_byte(cmVal1); //send byte value
 		serial2_write_byte(254); //send stop byte
+		}
 	}
 
 	//if a new byte has been received
