@@ -21,6 +21,12 @@ int main(void)
   uint16_t fc=0, rc=0;              // Joystick readings received from controller
   static int16_t lm=0, rm =0;       // Speed and direction of motors
 
+  uint8_t sendDataByte1=0, sendDataByte2=0,sendDataByte3=0;		// data bytes sent
+  uint32_t current_ms=0, last_send_ms=0;			// used for timing the serial send
+
+  uint16_t rsVal = 0, rsVal2 = 0, rsVal3 = 0;       // range sensor value
+  uint16_t x_reading=0, y_reading=0;  // reading of joysticks to be sent to robot
+
   DDRA |= (1<<DDA0)|(1<<DDA1)|(1<<DDA2)|(1<<DDA3);      // put PORTA into output mode for motors
   PORTA = 0;
 
@@ -31,12 +37,37 @@ int main(void)
   TCCR3B |= (1<<WGM33) | (1<<CS31);       // WGM 8 and Prescaler of 8
   ICR3 = 10000;                           // TOP is 16000
 
-	UCSR2B |= (1 << RXCIE2); // Enable the USART Receive Complete interrupt (USART_RXC)
-
+  UCSR2B |= (1 << RXCIE2); // Enable the USART Receive Complete interrupt (USART_RXC)
+  DDRF = 0;  
   sei();
 
   while(1)//main loop
   {
+	//sending section
+		if(current_ms-last_send_ms >= 500) //sending rate controlled here one message every 100ms (10Hz)
+    {
+			rsVal = adc_read(0);
+      			sendDataByte1 = rsVal / 4;
+		if(sendDataByte1>253)
+			{dataByte1 = 253;} 
+		rsVal2 = adc_read(1);
+		sendDataByte2 = rsVal2 /4;
+		if(sendDataByte2>253)
+			{dataByte2 = 253;}
+		rsVal3 = adc_read(2);
+		sendDataByte3 = rsVal3 / 4;
+		if(sendDataByte3>253)
+			{dataByte3 = 253;}
+
+			
+		last_send_ms = current_ms;
+		serial2_write_byte(0xFF); 		//send start byte = 255
+		serial2_write_byte(sendDataByte1); 	//send first data byte: must be scaled to the range 0-253
+		serial2_write_byte(sendDataByte2);
+		serial2_write_byte(sendDataByte3);
+		serial2_write_byte(0xFE); 		//send stop byte = 254
+    }
+
     if (new_message_received_flag)
     {
       fc=dataByte1, rc=dataByte2;
