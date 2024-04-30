@@ -38,7 +38,7 @@ int main(void)
   ICR3 = 10000;                           // TOP is 16000
 
   UCSR2B |= (1 << RXCIE2); // Enable the USART Receive Complete interrupt (USART_RXC)
-  DDRF = 0;  
+  DDRF = 0;  //output for range sensor
   sei();
 
   while(1)//main loop
