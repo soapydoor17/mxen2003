@@ -6,11 +6,12 @@
 #include "Robot.h"
 
 //static function prototypes, functions only called in this file
-volatile uint8_t dataByte1=0, dataByte2=0;
+volatile uint8_t dataByte1=0, dataByte2=0, dataByte3=0;
 volatile bool new_message_received_flag=false;
 
 int main(void)
 {
+  cli();
   // initialisation
 	serial0_init(); 	// terminal communication with PC
 	serial2_init();		// microcontroller communication to/from another Arduino
@@ -46,15 +47,15 @@ int main(void)
 	//sending section
 		if(current_ms-last_send_ms >= 500) //sending rate controlled here one message every 100ms (10Hz)
     {
-			rsVal = adc_read(0);
+			rsVal = adc_read(0); // Left sensor
       			sendDataByte1 = rsVal / 4;
 		if(sendDataByte1>253)
 			{dataByte1 = 253;} 
-		rsVal2 = adc_read(1);
+		rsVal2 = adc_read(1); // Front sensor
 		sendDataByte2 = rsVal2 /4;
 		if(sendDataByte2>253)
 			{dataByte2 = 253;}
-		rsVal3 = adc_read(2);
+		rsVal3 = adc_read(2); // Right sensor
 		sendDataByte3 = rsVal3 / 4;
 		if(sendDataByte3>253)
 			{dataByte3 = 253;}
@@ -72,8 +73,8 @@ int main(void)
     {
       fc=dataByte1, rc=dataByte2;
 
-      lm = fc + rc - 253;
-      rm = fc - rc;
+      rm = fc + rc - 253;
+      lm = fc - rc;
 
       OCR3A = (int32_t)abs(lm) * 10000 / 126;
       OCR3B = (int32_t)abs(rm) * 10000 / 126;
