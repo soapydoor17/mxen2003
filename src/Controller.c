@@ -12,6 +12,7 @@ volatile bool new_message_received_flag=false;
 
 int main(void)
 {
+  cli();
   serial0_init(); 	// terminal communication with PC
   serial2_init();		// microcontroller communication to/from another Arduino
   milliseconds_init();
@@ -20,7 +21,7 @@ int main(void)
 
   uint8_t sendDataByte1=0, sendDataByte2=0;		// data bytes sent
   uint32_t current_ms=0, last_send_ms=0;			// used for timing the serial send
-  uint16_t rsVal=0, cmVal=0, rsVal2=0, cmVal2=0, rsVal3=0, cmVal3=0;          // current value of Range Sensor (received from robot), and cm version
+  uint16_t rsValL=0, cmValL=0, rsValF=0, cmValF=0, rsValR=0, cmValR=0;          // current value of Range Sensor (received from robot), and cm version
   uint16_t x_reading=0, y_reading=0;  // reading of joysticks to be sent to robot
   char serial0_sting[16] = {0};
 
@@ -34,6 +35,7 @@ int main(void)
   {
     // Sending information
     current_ms = milliseconds_now();
+
     if(current_ms-last_send_ms >= 100)
     {
       // Read joysticks and convert for sending
@@ -61,17 +63,19 @@ int main(void)
 
   //recinfo
   if(new_message_received_flag) 
-{
-  // Convert recieved data
-    rsVal = (dataByte1 * 4);
-    rsVal2 = (dataByte2 * 4);
-    rsVal3 = (dataByte3 * 4);
-    cmVal = 7000/rsVal - 6;
-    cmVal2 = 7000/rsVal2 - 6;
-    cmVal3 = 7000/rsVal3 - 6;
-    lcd_goto(0x40);
-     sprintf(serial0_sting, "%4u; %4u; %4u", cmVal, cmVal2, cmVal3);
-     serial0_print_string(serial0_sting);  // print the received bytes to the USB serial to make sure the right messages are received
+  {
+    // Convert recieved data
+      rsValL = (dataByte1 * 4);
+      rsValF = (dataByte2 * 4);
+      rsValR = (dataByte3 * 4);
+      cmValL = 7000/rsValL - 6;
+      cmValF = 7000/rsValF - 6;
+      cmValR = 7000/rsValR - 6;
+      
+      new_message_received_flag = false;
+  }
+  sprintf(serial0_sting, "LEFT: %5ucm     FRONT: %5ucm     RIGHT: %5ucm", cmValL, cmValF, cmValR);
+  serial0_print_string(serial0_sting);  // print the received bytes to the USB serial to make sure the right messages are received
   }
   return(1);
 } //end main 
