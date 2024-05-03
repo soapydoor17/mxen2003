@@ -19,17 +19,22 @@ int main(void)
   _delay_ms(20);
 	
   // variables
+	//motors
   uint16_t fc=0, rc=0;              // Joystick readings received from controller
   static int16_t lm=0, rm =0;       // Speed and direction of motors
 
+	//range sensor
   uint8_t sendDataByte1=0, sendDataByte2=0,sendDataByte3=0;		// data bytes sent
   uint32_t current_ms=0, last_send_ms=0;			// used for timing the serial send
-
   uint16_t rsVal = 0, rsVal2 = 0, rsVal3 = 0;       // range sensor value
-  uint16_t x_reading=0, y_reading=0;  // reading of joysticks to be sent to robot
 
-  DDRA |= (1<<DDA0)|(1<<DDA1)|(1<<DDA2)|(1<<DDA3);      // put PORTA into output mode for motors
-  PORTA = 0;
+	//battery checker
+  uint16_t raw_bat_val = 0; // value for adc read of battery to be stored
+  uint16_t scale_bat_val =0; // value for scaled (out of 5) battery value to be stored)
+
+  //port initialising
+  DDRA |= (1<<DDA0)|(1<<DDA1)|(1<<DDA2)|(1<<DDA3);      // put PORTA into output mode for motors & battery detector
+  PORTA = 0;						// PORTA pins originally all off.
 
   DDRE |= (1<<PE3)|(1<<PE4);        // PORTE output mode for motors
   OCR3A = 8000;
@@ -44,7 +49,7 @@ int main(void)
 
   while(1)//main loop
   {
-	//sending section
+	//sending range sensor data value section
 		if(current_ms-last_send_ms >= 500) //sending rate controlled here one message every 100ms (10Hz)
     {
 			rsVal = adc_read(0); // Left sensor
@@ -69,6 +74,7 @@ int main(void)
 		serial2_write_byte(0xFE); 		//send stop byte = 254
     }
 
+	//motor control
     if (new_message_received_flag)
     {
       fc=dataByte1, rc=dataByte2;
@@ -107,6 +113,18 @@ int main(void)
 
       new_message_received_flag = false;
     }
+
+     //battery checking
+raw_bat_val = adc_read(3);
+scale_bat_val = (raw_bat_val * 4941) / 5000 
+if (scale_bat_val <= 4722)
+{
+PORTA |= (1<<PA5);	
+}
+else
+{
+PORTA &= ~(1<<PA5);
+}
   }
   return(1);
 }//end main 
