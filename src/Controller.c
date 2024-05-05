@@ -23,7 +23,7 @@ int main(void)
   uint32_t current_ms=0, last_send_ms=0;			// used for timing the serial send
   uint16_t rsValL=0, cmValL=0, rsValF=0, cmValF=0, rsValR=0, cmValR=0;          // current value of Range Sensor (received from robot), and cm version
   uint16_t x_reading=0, y_reading=0;  // reading of joysticks to be sent to robot
-  char serial0_sting[16] = {0};
+  char serial0_sting[100] = {0};
 
   DDRF = 0;          // put PORTF into input mode for joysticks
 
