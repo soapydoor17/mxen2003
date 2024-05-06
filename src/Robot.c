@@ -16,6 +16,7 @@ int main(void)
 	serial0_init(); 	// terminal communication with PC
 	serial2_init();		// microcontroller communication to/from another Arduino
   milliseconds_init();
+  adc_init();
   _delay_ms(20);
 	
   // variables
@@ -23,10 +24,10 @@ int main(void)
   uint16_t fc=0, rc=0;              // Joystick readings received from controller
   static int16_t lm=0, rm =0;       // Speed and direction of motors
 
-	//range sensor
+	//range sensor and serial communication (sending)
   uint8_t sendDataByte1=0, sendDataByte2=0,sendDataByte3=0;		// data bytes sent
   uint32_t current_ms=0, last_send_ms=0;			// used for timing the serial send
-  uint16_t rsVal = 0, rsVal2 = 0, rsVal3 = 0;       // range sensor value
+  uint16_t rsVal1 = 0, rsVal2 = 0, rsVal3 = 0;       // range sensor value
 
 	//battery checker
   uint16_t raw_bat_val = 0; // value for adc read of battery to be stored
@@ -36,6 +37,16 @@ int main(void)
   DDRA |= (1<<DDA0)|(1<<DDA1)|(1<<DDA2)|(1<<DDA3);      // put PORTA into output mode for motors & battery detector
   PORTA = 0;						// PORTA pins originally all off.
 
+  // PWM set up for servo
+  uint16_t compValServo = 1000;
+  DDRB |= (1<<PB5);
+  OCR1A = compValServo;
+  TCCR1A |= (1<<COM1A1);
+  TCCR1B |= (1<<WGM13)|(1<<CS11);
+  TCNT1 = 0;
+  ICR1 = 20000;
+
+  // PWM Set up for Motors
   DDRE |= (1<<PE3)|(1<<PE4);        // PORTE output mode for motors
   OCR3A = 8000;
   OCR3B = 8000;
@@ -52,31 +63,37 @@ int main(void)
 	//sending range sensor data value section
 		if(current_ms-last_send_ms >= 500) //sending rate controlled here one message every 100ms (10Hz)
     {
-			rsVal = adc_read(0); // Left sensor
-      			sendDataByte1 = rsVal / 4;
-		if(sendDataByte1>253)
-			{dataByte1 = 253;} 
-		rsVal2 = adc_read(1); // Front sensor
-		sendDataByte2 = rsVal2 /4;
-		if(sendDataByte2>253)
-			{dataByte2 = 253;}
-		rsVal3 = adc_read(2); // Right sensor
-		sendDataByte3 = rsVal3 / 4;
-		if(sendDataByte3>253)
-			{dataByte3 = 253;}
-
-			
-		last_send_ms = current_ms;
-		serial2_write_byte(0xFF); 		//send start byte = 255
-		serial2_write_byte(sendDataByte1); 	//send first data byte: must be scaled to the range 0-253
-		serial2_write_byte(sendDataByte2);
-		serial2_write_byte(sendDataByte3);
-		serial2_write_byte(0xFE); 		//send stop byte = 254
+      rsVal1 = adc_read(0); // Left sensor
+      sendDataByte1 = rsVal1 / 4;
+      if(sendDataByte1>253)
+        {dataByte1 = 253;} 
+      
+      rsVal2 = adc_read(1); // Front sensor
+      sendDataByte2 = rsVal2 /4;
+      if(sendDataByte2>253)
+        {dataByte2 = 253;}
+      
+      rsVal3 = adc_read(2); // Right sensor
+      sendDataByte3 = rsVal3 / 4;
+      if(sendDataByte3>253)
+        {dataByte3 = 253;}
+      
+      last_send_ms = current_ms;
+      serial2_write_byte(0xFF); 		//send start byte = 255
+      serial2_write_byte(sendDataByte1); 	//send first data byte: must be scaled to the range 0-253
+      serial2_write_byte(sendDataByte2);
+      serial2_write_byte(sendDataByte3);
+      serial2_write_byte(0xFE); 		//send stop byte = 254
     }
 
 	//motor control
     if (new_message_received_flag)
     {
+      // Servo
+      compValServo = dataByte3 * 4 + 1000;
+      OCR1A = compValServo;
+
+      // Motor
       fc=dataByte1, rc=dataByte2;
 
       rm = fc + rc - 253;
@@ -114,24 +131,24 @@ int main(void)
       new_message_received_flag = false;
     }
 
-     //battery checking
-raw_bat_val = adc_read(3);
-scale_bat_val = (raw_bat_val * 4941) / 5000 
-if (scale_bat_val <= 4722)
-{
-PORTA |= (1<<PA5);	
-}
-else
-{
-PORTA &= ~(1<<PA5);
-}
+  //battery checking
+  raw_bat_val = adc_read(3);
+  scale_bat_val = (raw_bat_val * 4941) / 5000;
+  if (scale_bat_val <= 4722)
+  {
+  PORTA |= (1<<PA5);	
+  }
+  else
+  {
+  PORTA &= ~(1<<PA5);
+  }
   }
   return(1);
 }//end main 
 
 ISR(USART2_RX_vect)
 {
-  static uint8_t recvByte1=0, recvByte2=0;		// data bytes received
+  static uint8_t recvByte1=0, recvByte2=0, recvByte3=0;		// data bytes received
 	static uint8_t serial_fsm_state=0;									// used in the serial receive ISR
 	uint8_t	serial_byte_in = UDR2; //move serial byte into variable
 	
@@ -148,13 +165,17 @@ ISR(USART2_RX_vect)
 		recvByte2 = serial_byte_in;
 		serial_fsm_state++;
 		break;
-		case 3: //waiting for stop byte
+		case 3: //waiting for third parameter
+    recvByte3 = serial_byte_in;
+    serial_fsm_state++;
+    case 4: //waiting for stop byte
 		if(serial_byte_in == 0xFE) //stop byte
 		{
 			// now that the stop byte has been received, set a flag so that the
 			// main loop can execute the results of the message
 			dataByte1 = recvByte1;
 			dataByte2 = recvByte2;
+      dataByte3 = recvByte3;
 			
 			new_message_received_flag=true;
 		}

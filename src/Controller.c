@@ -19,10 +19,10 @@ int main(void)
   adc_init();
   _delay_ms(20);
 
-  uint8_t sendDataByte1=0, sendDataByte2=0;		// data bytes sent
+  uint8_t sendDataByte1=0, sendDataByte2=0, sendDataByte3=0;		// data bytes sent
   uint32_t current_ms=0, last_send_ms=0;			// used for timing the serial send
   uint16_t rsValL=0, cmValL=0, rsValF=0, cmValF=0, rsValR=0, cmValR=0;          // current value of Range Sensor (received from robot), and cm version
-  uint16_t x_reading=0, y_reading=0;  // reading of joysticks to be sent to robot
+  uint16_t xr_reading=0, yr_reading=0, xl_reading=0;  // reading of joysticks to be sent to robot: r - right joystick controls motor; l - left joystick controls servo
   char serial0_sting[100] = {0};
 
   DDRF = 0;          // put PORTF into input mode for joysticks
@@ -39,25 +39,33 @@ int main(void)
     if(current_ms-last_send_ms >= 100)
     {
       // Read joysticks and convert for sending
-      y_reading = adc_read(0);
-      x_reading = adc_read(1);
+      yr_reading = adc_read(0);
+      xr_reading = adc_read(1);
+      xl_reading = adc_read(14);
 
-      sendDataByte1 = y_reading / 4;
+      sendDataByte1 = yr_reading / 4;
       if (sendDataByte1 > 253)
       {
         sendDataByte1 = 253;
       }
 
-      sendDataByte2 = x_reading / 4;
+      sendDataByte2 = xr_reading / 4;
       if (sendDataByte2 > 253)
       {
         sendDataByte2 = 253;
+      }
+
+      sendDataByte3 = xl_reading / 4;
+      if (sendDataByte3 > 253)
+      {
+        sendDataByte3 = 253;
       }
 
       last_send_ms = current_ms;
       serial2_write_byte(0xFF);
       serial2_write_byte(sendDataByte1);
       serial2_write_byte(sendDataByte2);
+      serial2_write_byte(sendDataByte3);
       serial2_write_byte(0xFE);
     }
 
