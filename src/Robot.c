@@ -23,18 +23,20 @@ int main(void)
 	//motors
   uint16_t fc=0, rc=0;              // Joystick readings received from controller
   static int16_t lm=0, rm =0;       // Speed and direction of motors
+   char serial0_sting[100] = {0};
 
 	//range sensor and serial communication (sending)
   uint8_t sendDataByte1=0, sendDataByte2=0,sendDataByte3=0;		// data bytes sent
   uint32_t current_ms=0, last_send_ms=0;			// used for timing the serial send
   uint16_t rsVal1 = 0, rsVal2 = 0, rsVal3 = 0;       // range sensor value
+  uint16_t xl_reading=0;
 
 	//battery checker
   uint16_t raw_bat_val = 0; // value for adc read of battery to be stored
   uint16_t scale_bat_val =0; // value for scaled (out of 5) battery value to be stored)
 
   //port initialising
-  DDRA |= (1<<DDA0)|(1<<DDA1)|(1<<DDA2)|(1<<DDA3);      // put PORTA into output mode for motors & battery detector
+  DDRA |= 255;      // put PORTA into output mode for motors & battery detector
   PORTA = 0;						// PORTA pins originally all off.
 
   // PWM set up for servo
@@ -84,13 +86,16 @@ int main(void)
       serial2_write_byte(sendDataByte2);
       serial2_write_byte(sendDataByte3);
       serial2_write_byte(0xFE); 		//send stop byte = 254
+      sprintf(serial0_sting, "LEFT: %5ucm     FRONT: %5ucm     RIGHT: %5ucm \n", sendDataByte1, sendDataByte2, sendDataByte3);
+      serial0_print_string(serial0_sting);  // print the received bytes to the USB serial to make sure the right messages are received
     }
 
 	//motor control
     if (new_message_received_flag)
     {
       // Servo
-      compValServo = dataByte3 * 4 + 1000;
+      xl_reading = dataByte3 * 4;
+      compValServo = xl_reading + 1000;
       OCR1A = compValServo;
 
       // Motor
@@ -130,11 +135,10 @@ int main(void)
 
       new_message_received_flag = false;
     }
-
+  //PORTA |= (1<<PA5);	
   //battery checking
   raw_bat_val = adc_read(3);
-  scale_bat_val = (raw_bat_val * 4941) / 5000;
-  if (scale_bat_val <= 4722)
+  if (raw_bat_val <= 995)
   {
   PORTA |= (1<<PA5);	
   }
@@ -168,6 +172,7 @@ ISR(USART2_RX_vect)
 		case 3: //waiting for third parameter
     recvByte3 = serial_byte_in;
     serial_fsm_state++;
+    break;
     case 4: //waiting for stop byte
 		if(serial_byte_in == 0xFE) //stop byte
 		{
