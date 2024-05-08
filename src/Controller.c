@@ -22,8 +22,8 @@ int main(void)
   uint8_t sendDataByte1=0, sendDataByte2=0, sendDataByte3=0;		// data bytes sent
   uint32_t current_ms=0, last_send_ms=0;			// used for timing the serial send
   uint16_t rsValL=0, cmValL=0, rsValF=0, cmValF=0, rsValR=0, cmValR=0;          // current value of Range Sensor (received from robot), and cm version
-  uint16_t xr_reading=0, yr_reading=0, xl_reading=0;  // reading of joysticks to be sent to robot: r - right joystick controls motor; l - left joystick controls servo
-  char serial0_sting[100] = {0};
+  uint16_t xl_reading=0, xr_reading=0, yr_reading=0;  // reading of joysticks to be sent to robot
+ // char serial0_sting[100] = {0};
 
   DDRF = 0;          // put PORTF into input mode for joysticks
 
@@ -42,7 +42,8 @@ int main(void)
       yr_reading = adc_read(0);
       xr_reading = adc_read(1);
       xl_reading = adc_read(14);
-
+  
+      
       sendDataByte1 = yr_reading / 4;
       if (sendDataByte1 > 253)
       {
@@ -56,6 +57,9 @@ int main(void)
       }
 
       sendDataByte3 = xl_reading / 4;
+      //sprintf(serial0_sting,"yeet:%4u\n", sendDataByte3);
+      //serial0_print_string(serial0_sting);  // print the received bytes to the USB serial to make sure the right messages are received
+
       if (sendDataByte3 > 253)
       {
         sendDataByte3 = 253;
@@ -76,14 +80,14 @@ int main(void)
       rsValL = (dataByte1 * 4);
       rsValF = (dataByte2 * 4);
       rsValR = (dataByte3 * 4);
-      cmValL = 7000/rsValL - 6;
-      cmValF = 7000/rsValF - 6;
-      cmValR = 7000/rsValR - 6;
+      cmValL = (7000/rsValL) - 6;
+      cmValF = (7000/rsValF) - 6;
+      cmValR = (7000/rsValR) - 6;
       
       new_message_received_flag = false;
   }
-  sprintf(serial0_sting, "LEFT: %5ucm     FRONT: %5ucm     RIGHT: %5ucm", cmValL, cmValF, cmValR);
-  serial0_print_string(serial0_sting);  // print the received bytes to the USB serial to make sure the right messages are received
+  //sprintf(serial0_sting, "LEFT: %5ucm     FRONT: %5ucm     RIGHT: %5ucm \n", cmValL, cmValF, cmValR);
+  //serial0_print_string(serial0_sting);  // print the received bytes to the USB serial to make sure the right messages are received
   }
   return(1);
 } //end main 
@@ -103,11 +107,11 @@ ISR(USART2_RX_vect)  // ISR executed whenever a new byte is available in the ser
 		recvByte1 = serial_byte_in;
 		serial_fsm_state++;
 		break;
-		case 2: //waiting for first parameter
+		case 2: //waiting for second parameter
 		recvByte2 = serial_byte_in;
 		serial_fsm_state++;
 		break;
-		case 3: //waiting for first parameter
+		case 3: //waiting for third parameter
 		recvByte3 = serial_byte_in;
 		serial_fsm_state++;
 		break;
