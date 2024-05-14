@@ -30,7 +30,7 @@ bool autonomous_flag= 0;
 	//range sensor and serial communication (sending)
   uint8_t sendDataByte1=0, sendDataByte2=0,sendDataByte3=0;		// data bytes sent
   uint32_t current_ms=0, last_send_ms=0;			// used for timing the serial send
-  uint16_t rsVal_left = 0, rsVal_front = 0, rsVal_right = 0, cmVal_left = 0, cmVal_right = 0, cmVal_front = 0;       // range sensor value
+  uint16_t rsVal_left = 0, rsVal_front = 0, rsVal_right = 0, cmVal_left = 0, cmVal_right = 0, cmVal_front = 0, av_left=0, av_right=0, av_front=0;       // range sensor value
   uint16_t xl_reading=0;
 
 	//battery checker
@@ -68,17 +68,23 @@ bool autonomous_flag= 0;
 		if(current_ms-last_send_ms >= 500) //sending rate controlled here one message every 100ms (10Hz)
     {
       rsVal_left = adc_read(0); // Left sensor
-      sendDataByte1 = rsVal1 / 4;
+      av_left = 0.9 * av_left + 0.1 rsVal_left
+      cmVal_left = (7000/av_left) - 6;
+      sendDataByte1 = av_left/4;
       if(sendDataByte1>253)
         {dataByte1 = 253;} 
       
       rsVal_front = adc_read(1); // Front sensor
-      sendDataByte2 = rsVal2 /4;
+      av_front = 0.9 * av_front + 0.1 rsVal_front
+      cmVal_front = (7000/av_front) - 6;
+      sendDataByte2 = av_front /4;
       if(sendDataByte2>253)
         {dataByte2 = 253;}
       
       rsVal3_back = adc_read(2); // Right sensor
-      sendDataByte3 = rsVal3 / 4;
+      av_right = 0.9 * av_right + 0.1 rsVal_right
+      cmVal_right = (7000/av_right) - 6
+      sendDataByte3 = av_right / 4;
       if(sendDataByte3>253)
         {dataByte3 = 253;}
       
@@ -140,16 +146,14 @@ bool autonomous_flag= 0;
   //autonomous function (should be exclusive to controller function)
 if(autonomous_flag) 
 {	
-	cmVal_left = (7000/rsVal_left) - 6;
-	cmVal_right = (7000/rsVal_right) - 6;
-	cmVal_front = (7000/rsVal_front) - 6;
-	if(cmVal_front > 10)
+
+	if(av_front > 10)
 	{
-		if(cmVal_right < 6)
+		if(av_right < 6)
 		{
 			//veer left
 		}
-		if(cmVal_left < 6)
+		if(av_left < 6)
 		{
 			//veer right
 		}
@@ -159,14 +163,14 @@ if(autonomous_flag)
 		PORTA |= (1<<PA2);
         	PORTA &= ~(1<<PA3);
 	}
-	if(cmVal_front <= 10)
+	if(av_front <= 10)
 	{
 		//stop
 		PORTA &= ~(1<<PA0);
 		PORTA &= ~(1<<PA1);
 		PORTA &= ~(1<<PA2);
        		PORTA &= ~(1<<PA3);
-		if(cmVal_front <= 3)
+		if(av_front <= 3)
 		{
 			//move backwards
 			PORTA &= ~(1<<PA0);
@@ -174,13 +178,13 @@ if(autonomous_flag)
 			PORTA &= ~(1<<PA2);
         		PORTA |= (1<<PA3);
 		}
-		elif(cmVal_left>cmVal_right)
+		elif(av_left > av_right)
 		{
-			//rotate 90* left ie until cmVal_right = prevcmVal_front then stop
+			//rotate 90* left ie until av_right = prevav_front then stop
 		}
-		elif(cmVal_right>cmVal_left)
+		elif(av_right > av_left)
 	        {
-			//rotate 90* right ie until cmVal_right = prevcmVal_front then stop
+			//rotate 90* right ie until av_left = prevav_front then stop
 		}
 	}
 }
