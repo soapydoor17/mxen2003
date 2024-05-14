@@ -28,7 +28,7 @@ int main(void)
 	//range sensor and serial communication (sending)
   uint8_t sendDataByte1=0, sendDataByte2=0,sendDataByte3=0;		// data bytes sent
   uint32_t current_ms=0, last_send_ms=0;			// used for timing the serial send
-  uint16_t rsVal1 = 0, rsVal2 = 0, rsVal3 = 0;       // range sensor value
+  uint16_t rsVal_left = 0, rsVal_front = 0, rsVal_right = 0;       // range sensor value
   uint16_t xl_reading=0;
 
 	//battery checker
@@ -65,17 +65,17 @@ int main(void)
 	//sending range sensor data value section
 		if(current_ms-last_send_ms >= 500) //sending rate controlled here one message every 100ms (10Hz)
     {
-      rsVal1 = adc_read(0); // Left sensor
+      rsVal_left = adc_read(0); // Left sensor
       sendDataByte1 = rsVal1 / 4;
       if(sendDataByte1>253)
         {dataByte1 = 253;} 
       
-      rsVal2 = adc_read(1); // Front sensor
+      rsVal_front = adc_read(1); // Front sensor
       sendDataByte2 = rsVal2 /4;
       if(sendDataByte2>253)
         {dataByte2 = 253;}
       
-      rsVal3 = adc_read(2); // Right sensor
+      rsVal3_back = adc_read(2); // Right sensor
       sendDataByte3 = rsVal3 / 4;
       if(sendDataByte3>253)
         {dataByte3 = 253;}
