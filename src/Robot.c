@@ -146,7 +146,8 @@ bool autonomous_flag= 0;
   //autonomous function (should be exclusive to controller function)
 if(autonomous_flag) 
 {	
-
+	OCR3A = 8000;
+	OCR3B = 8000;
 	if(av_front > 10)
 	{
 		if(av_right < 6)
