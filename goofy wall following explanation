@@ -1,4 +1,4 @@
-Part A
+Part A psuedo code
 If range sensor forward > some distance: {
   move forward
   If range sensor left > range sensor right:{
@@ -6,6 +6,13 @@ If range sensor forward > some distance: {
   elIf range sensor right > range sensor left:{
   move right until equal}
   }
+
+cmVal_left = (7000/rsVal_left) - 6;
+cmVal_right = (7000/rsVal_right) - 6;
+cmVal_front = (7000/rsVal_front) - 6;
+Part A code
+if (cmVal_front > 8cm) {
+  
 
 Part B
 If range sensor forward < some distance: {
