@@ -1,0 +1,23 @@
+Part A
+If range sensor forward > some distance: {
+  move forward
+  If range sensor left > range sensor right:{
+    move left until equal}
+  elIf range sensor right > range sensor left:{
+  move right until equal}
+  }
+
+Part B
+If range sensor forward < some distance: {
+  Stop move forward
+  If range sensor left > range sensor right: {
+    rotate left 90*}
+  elif range sensor right > range sensor left: {
+    rotate right 90*}
+  }
+
+Part C
+If range sensor forward < some smaller distance: {
+  move backwards}
+
+     
