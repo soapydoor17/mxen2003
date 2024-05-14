@@ -24,11 +24,13 @@ int main(void)
   uint16_t fc=0, rc=0;              // Joystick readings received from controller
   static int16_t lm=0, rm =0;       // Speed and direction of motors
    char serial0_sting[100] = {0};
+	//autonomous
+bool autonomous_flag= 0;
 
 	//range sensor and serial communication (sending)
   uint8_t sendDataByte1=0, sendDataByte2=0,sendDataByte3=0;		// data bytes sent
   uint32_t current_ms=0, last_send_ms=0;			// used for timing the serial send
-  uint16_t rsVal_left = 0, rsVal_front = 0, rsVal_right = 0;       // range sensor value
+  uint16_t rsVal_left = 0, rsVal_front = 0, rsVal_right = 0, cmVal_left = 0, cmVal_right = 0, cmVal_front = 0;       // range sensor value
   uint16_t xl_reading=0;
 
 	//battery checker
@@ -135,7 +137,54 @@ int main(void)
 
       new_message_received_flag = false;
     }
-  //PORTA |= (1<<PA5);	
+  //autonomous function (should be exclusive to controller function)
+if(autonomous_flag) 
+{	
+	cmVal_left = (7000/rsVal_left) - 6;
+	cmVal_right = (7000/rsVal_right) - 6;
+	cmVal_front = (7000/rsVal_front) - 6;
+	if(cmVal_front > 10)
+	{
+		if(cmVal_right < 6)
+		{
+			//veer left
+		}
+		if(cmVal_left < 6)
+		{
+			//veer right
+		}
+		//move forward
+		PORTA |= (1<<PA0);
+  		PORTA &= ~(1<<PA1);
+		PORTA |= (1<<PA2);
+        	PORTA &= ~(1<<PA3);
+	}
+	if(cmVal_front <= 10)
+	{
+		//stop
+		PORTA &= ~(1<<PA0);
+		PORTA &= ~(1<<PA1);
+		PORTA &= ~(1<<PA2);
+       		PORTA &= ~(1<<PA3);
+		if(cmVal_front <= 3)
+		{
+			//move backwards
+			PORTA &= ~(1<<PA0);
+  			PORTA |= (1<<PA1);
+			PORTA &= ~(1<<PA2);
+        		PORTA |= (1<<PA3);
+		}
+		elif(cmVal_left>cmVal_right)
+		{
+			//rotate 90* left ie until cmVal_right = prevcmVal_front then stop
+		}
+		elif(cmVal_right>cmVal_left)
+	        {
+			//rotate 90* right ie until cmVal_right = prevcmVal_front then stop
+		}
+	}
+}
+		
   //battery checking
   raw_bat_val = adc_read(3);
   if (raw_bat_val <= 995)
