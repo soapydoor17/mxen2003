@@ -21,7 +21,7 @@ int main(void)
 
   uint8_t sendDataByte1=0, sendDataByte2=0, sendDataByte3=0;		// data bytes sent
   uint32_t current_ms=0, last_send_ms=0;			// used for timing the serial send
-  uint16_t rsValL=0, cmValL=0, rsValF=0, cmValF=0, rsValR=0, cmValR=0;          // current value of Range Sensor (received from robot), and cm version
+  uint16_t cmValF=0, rsValL=0, cmValR=0;          // current value of Range Sensor (received from robot), and cm version
   uint16_t xl_reading=0, xr_reading=0, yr_reading=0;  // reading of joysticks to be sent to robot
  // char serial0_sting[100] = {0};
 
@@ -77,13 +77,9 @@ int main(void)
   if(new_message_received_flag) 
   {
     // Convert recieved data
-      rsValL = (dataByte1 * 4);
-      rsValF = (dataByte2 * 4);
-      rsValR = (dataByte3 * 4);
-      cmValL = (7000/rsValL) - 6;
-      cmValF = (7000/rsValF) - 6;
-      cmValR = (7000/rsValR) - 6;
-      
+      cmValL = (dataByte1 * 4);
+      cmValF = (dataByte2 * 4);
+      cmValR = (dataByte3 * 4);
       new_message_received_flag = false;
   }
   //sprintf(serial0_sting, "LEFT: %5ucm     FRONT: %5ucm     RIGHT: %5ucm \n", cmValL, cmValF, cmValR);
