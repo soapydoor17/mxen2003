@@ -64,6 +64,7 @@ int main(void)
 
 	while(1)//main loop
 	{
+	current_ms - milliseconds_now();
 		//sending range sensor data value section
 		if(current_ms-last_send_ms >= 500) //sending rate controlled here one message every 100ms (10Hz)
 		{
@@ -176,23 +177,38 @@ int main(void)
 					PORTA &= ~(1<<PA1);
 					PORTA &= ~(1<<PA2);
        					PORTA &= ~(1<<PA3);
-				if(av_front <= 3)
-				{
-					//move backwards
-					PORTA &= ~(1<<PA0);
-  					PORTA |= (1<<PA1);
-					PORTA &= ~(1<<PA2);
-        				PORTA |= (1<<PA3);
-				}
+					if(av_front <= 3)
+					{
+						//move backwards
+						PORTA &= ~(1<<PA0);
+  						PORTA |= (1<<PA1);
+						PORTA &= ~(1<<PA2);
+        					PORTA |= (1<<PA3);
+						_delay_ms(10);
+						//stop
+						PORTA &= ~(1<<PA0);
+						PORTA &= ~(1<<PA1);
+						PORTA &= ~(1<<PA2);
+       						PORTA &= ~(1<<PA3);
+						
+					}
 				if(av_front >3)
 				{
 					if(av_left > av_right)
 					{
-						//rotate 90* left ie until av_right = prevav_front then stop
+						PORTA &= ~(1<<PA0);
+  						PORTA |= (1<<PA1);
+						PORTA |= (1<<PA2);
+        					PORTA &= ~(1<<PA3);
 					}
-					else(av_right > av_left)
+					if(av_right > av_left)
 	        			{
 						//rotate 90* right ie until av_left = prevav_front then stop
+						PORTA |= (1<<PA0);
+  						PORTA &= ~(1<<PA1);
+						PORTA &= ~(1<<PA2);
+        					PORTA |= (1<<PA3);
+						
 					}
 				}
 			}
