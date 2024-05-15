@@ -21,7 +21,7 @@ int main(void)
 
   uint8_t sendDataByte1=0, sendDataByte2=0, sendDataByte3=0;		// data bytes sent
   uint32_t current_ms=0, last_send_ms=0;			// used for timing the serial send
-  uint16_t cmValF=0, rsValL=0, cmValR=0;          // current value of Range Sensor (received from robot), and cm version
+  uint16_t cmValF=0, cmValL=0, cmValR=0;          // current value of Range Sensor (received from robot), and cm version
   uint16_t xl_reading=0, xr_reading=0, yr_reading=0;  // reading of joysticks to be sent to robot
  // char serial0_sting[100] = {0};
 
