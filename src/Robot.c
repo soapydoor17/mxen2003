@@ -68,22 +68,22 @@ int main(void)
 		if(current_ms-last_send_ms >= 500) //sending rate controlled here one message every 100ms (10Hz)
 		{
       			rsVal_left = adc_read(0); // Left sensor
-      			av_left = 0.9 * av_left + 0.1 rsVal_left
+      			av_left = 0.9 * av_left + 0.1 * rsVal_left;
       			cmVal_left = (7000/av_left) - 6;
-			sendDataByte1 = av_left/4;
+			sendDataByte1 = cmVal_left/4;
       			if(sendDataByte1>253)
         		{dataByte1 = 253;} 
       
       			rsVal_front = adc_read(1); // Front sensor
-      			av_front = 0.9 * av_front + 0.1 rsVal_front
+      			av_front = 0.9 * av_front + 0.1 * rsVal_front;
       			cmVal_front = (7000/av_front) - 6;
-      			sendDataByte2 = av_front /4;
+      			sendDataByte2 = cmVal_front /4;
       			if(sendDataByte2>253)
         		{dataByte2 = 253;}
       
-      			rsVal3_back = adc_read(2); // Right sensor
-      			av_right = 0.9 * av_right + 0.1 rsVal_right
-      			cmVal_right = (7000/av_right) - 6
+      			rs_right = adc_read(2); // Right sensor
+      			av_right = 0.9 * av_right + 0.1 * rsVal_right;
+      			cmVal_right = (7000/av_right) - 6;
       			sendDataByte3 = av_right / 4;
       			if(sendDataByte3>253)
         		{dataByte3 = 253;}
@@ -112,65 +112,70 @@ int main(void)
       			rm = fc + rc - 253;
       			lm = fc - rc;
 
-      			OCR3A = (int32_t)abs(lm) * 10000 / 126;
-      			OCR3B = (int32_t)abs(rm) * 10000 / 126;
+      			if(!autonomous_flag)
+			{
+				OCR3A = (int32_t)abs(lm) * 10000 / 126;
+      				OCR3B = (int32_t)abs(rm) * 10000 / 126;
 
-      			if (lm>=0)
-      			{
-        			// left motor goes forward
-        			PORTA |= (1<<PA0);
-        			PORTA &= ~(1<<PA1);
-      			}
-      			else
-      			{
-        		// left motor goes backward
-        		PORTA &= ~(1<<PA0);
-        		PORTA |= (1<<PA1);
-      			}
+      				if (lm>=0)
+      				{
+        				// left motor goes forward
+        				PORTA |= (1<<PA0);
+        				PORTA &= ~(1<<PA1);
+      				}
+      				else
+      				{
+        			// left motor goes backward
+        			PORTA &= ~(1<<PA0);
+        			PORTA |= (1<<PA1);
+      				}
 
-      			if (rm>=0)
-      			{
-        			// right motor goes forward
-        			PORTA |= (1<<PA2);
-        			PORTA &= ~(1<<PA3);
-      			}
-      			else
-      			{
-        			// right motor goes backward
-        			PORTA &= ~(1<<PA2);
-        			PORTA |= (1<<PA3);
-      			}
+      				if (rm>=0)
+      				{
+        				// right motor goes forward
+        				PORTA |= (1<<PA2);
+        				PORTA &= ~(1<<PA3);
+      				}
+      				else
+      				{
+        				// right motor goes backward
+        				PORTA &= ~(1<<PA2);
+        				PORTA |= (1<<PA3);
+      				}
 
       			new_message_received_flag = false;
-    		}
-  		//autonomous function (should be exclusive to controller function)
-		if(autonomous_flag) 
-		{	
-		OCR3A = 8000;
-		OCR3B = 8000;
-			if(av_front > 10)
-			{
-				if(av_right < 6)
-				{
-				//veer left
-				}
-				if(av_left < 6)
-				{
-				//veer right
-				}
-				//move forward
-				PORTA |= (1<<PA0);
-  				PORTA &= ~(1<<PA1);
-				PORTA |= (1<<PA2);
-        			PORTA &= ~(1<<PA3);
 			}
-			if(av_front <= 10)
-			{
-				//stop
-				PORTA &= ~(1<<PA0);
-				PORTA &= ~(1<<PA1);
-				PORTA &= ~(1<<PA2);
-       				PORTA &= ~(1<<PA3);
+			//autonomous funciton
+			else
+			{	
+				OCR3A = 7000;
+				OCR3B = 7000;
+				if(av_front > 10)
+				{
+					//move forward
+					PORTA |= (1<<PA0);
+  					PORTA &= ~(1<<PA1);
+					PORTA |= (1<<PA2);
+        				PORTA &= ~(1<<PA3);
+					if(av_right < 6)
+					{
+						//veer left
+						0CR3A = 8500
+					}
+					if(av_left < 6)
+					{
+						//veer right
+						0CR3B = 8500
+					}
+
+				}
+				if(av_front <= 10)
+				{
+					//stop
+					PORTA &= ~(1<<PA0);
+					PORTA &= ~(1<<PA1);
+					PORTA &= ~(1<<PA2);
+       					PORTA &= ~(1<<PA3);
 				if(av_front <= 3)
 				{
 					//move backwards
@@ -179,16 +184,18 @@ int main(void)
 					PORTA &= ~(1<<PA2);
         				PORTA |= (1<<PA3);
 				}
-				elif(av_left > av_right)
+				if(av_front >3)
 				{
-				//rotate 90* left ie until av_right = prevav_front then stop
-				}
-				elif(av_right > av_left)
-	        		{
-				//rotate 90* right ie until av_left = prevav_front then stop
+					if(av_left > av_right)
+					{
+						//rotate 90* left ie until av_right = prevav_front then stop
+					}
+					else(av_right > av_left)
+	        			{
+						//rotate 90* right ie until av_left = prevav_front then stop
+					}
 				}
 			}
-		}
 		
 	//battery checking
   	raw_bat_val = adc_read(3);
