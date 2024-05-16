@@ -66,7 +66,8 @@ int main(void)
       if (sendDataByte3 > 253)
       {sendDataByte3 = 253;}
 
-      sendDataByte4 = automode;
+      if (automode == 0) {sendDataByte4 = 0x00;}
+      else {sendDataByte4 = 0xFD;}
 
       last_send_ms = current_ms;
       serial2_write_byte(0xFF);
