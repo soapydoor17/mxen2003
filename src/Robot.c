@@ -150,59 +150,57 @@ int main(void)
 			//autonomous funciton
 			else
 			{	
-				OCR3A = 7000;
-				OCR3B = 7000;
-				if(av_front > 10)
+				OCR3A = 2500;
+				OCR3B = 2500;
+				if(cmVal_front > 10)
 				{
 					//move forward
 					PORTA |= (1<<PA1);
   					PORTA &= ~(1<<PA0);
 					PORTA |= (1<<PA3);
         			PORTA &= ~(1<<PA2);
-					if(av_right < 6)
+					if(cmVal_right < 6)
 					{
 						//veer left
-						OCR3A = 8500;
+						OCR3A = 3000;
 					}
-					if(av_left < 6)
+					if(cmVal_left < 6)
 					{
 						//veer right
-						OCR3B = 8500;
+						OCR3B = 3000;
 					}
 
 				}
-				if(av_front <= 10)
+				if(cmVal_front <= 10)
 				{
 					//stop
-					PORTA &= ~(1<<PA0);
-					PORTA &= ~(1<<PA1);
-					PORTA &= ~(1<<PA2);
-       					PORTA &= ~(1<<PA3);
-					if(av_front <= 3)
+					OCR3A = 0;
+					OCR3B = 0;
+					if(cmVal_front <= 3)
 					{
 						//move backwards
+						OCR3A = 2500;
+						OCR3B = 2500;
 						PORTA &= ~(1<<PA0);
   						PORTA |= (1<<PA1);
 						PORTA &= ~(1<<PA2);
-        					PORTA |= (1<<PA3);
+        				PORTA |= (1<<PA3);
 						_delay_ms(10);
 						//stop
-						PORTA &= ~(1<<PA0);
-						PORTA &= ~(1<<PA1);
-						PORTA &= ~(1<<PA2);
-       						PORTA &= ~(1<<PA3);
+						OCR3A = 0;
+						OCR3B = 0;	
 						
 					}
-				if(av_front >3)
+				if(cmVal_front >3)
 				{
-					if(av_left > av_right)
+					if(cmVal_left > cmVal_right)
 					{
 						PORTA &= ~(1<<PA0);
   						PORTA |= (1<<PA1);
 						PORTA |= (1<<PA2);
         				PORTA &= ~(1<<PA3);
 					}
-					if(av_right > av_left)
+					if(cmVal_right > cmVal_left)
 	        		{
 						//rotate 90* right ie until av_left = prevav_front then stop
 						PORTA |= (1<<PA0);
