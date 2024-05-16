@@ -111,11 +111,12 @@ int main(void)
       			rm = fc + rc - 253;
       			lm = fc - rc;
 
-				autonomous_flag = dataByte4;
+				if (dataByte4 == 0x00) {autonomous_flag = 0;}
+				else {autonomous_flag = 1;}
 
       			if(autonomous_flag == 0)
 				{
-				OCR3A = (int32_t)abs(lm) * 10000 / 126;
+					OCR3A = (int32_t)abs(lm) * 10000 / 126;
       				OCR3B = (int32_t)abs(rm) * 10000 / 126;
 
       				if (lm>=0)
