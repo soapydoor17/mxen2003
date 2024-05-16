@@ -90,7 +90,10 @@ int main(void)
   //sprintf(serial0_sting, "LEFT: %5ucm     FRONT: %5ucm     RIGHT: %5ucm \n", cmValL, cmValF, cmValR);
   //serial0_print_string(serial0_sting);  // print the received bytes to the USB serial to make sure the right messages are received
   lcd_home();
-  sprintf(string_lcd, "%6u", cmValL);
+  sprintf(string_lcd, "L: %3u  R: %3u", cmValL, cmValR);
+  lcd_puts(string_lcd);
+  lcd_goto(0x40);
+  sprintf(string_lcd, "F: %3u", cmValF);
   lcd_puts(string_lcd);
 
   }
