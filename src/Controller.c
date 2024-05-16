@@ -5,11 +5,13 @@
 //include this .c file's header file
 #include "Controller.h"
 #include "../lib/adc/adc.h" // minimal adc lib
+#define DEBOUNCE_PERIOD 200
 
 //static function prototypes, functions only called in this file
 volatile uint8_t dataByte1=2, dataByte2=0, dataByte3=0;		                // data bytes received
 volatile bool new_message_received_flag=false;
 volatile bool automode=0;
+volatile bool buttonTog=0;
 
 int main(void)
 {
@@ -32,12 +34,12 @@ int main(void)
   UCSR2B |= (1 << RXCIE2); // Enable the USART Receive Complete interrupt (USART_RXC)
 
   //Button Interupts
-  EICRA |= (1<<ISC01);
-	EICRA &= ~(1<<ISC00); // INT0 set falling edge trigger
-	EIMSK |= (1<<INT0);   // INT0 enable
+  DDRD &= ~(1<<PD2);         // PORTD into input mode for buttons
+  PORTD |= (1<<PD2);  // Pull up resistor for PD2
+  EICRA |= (1<<ISC21);
+	EICRA &= ~(1<<ISC20); // INT2 set falling edge trigger
+	EIMSK |= (1<<INT2);   // INT2 enable
 
-  
-	
   sei();
 
   while(1) //main loop
@@ -93,7 +95,9 @@ int main(void)
   sprintf(string_lcd, "L: %3u  R: %3u", cmValL, cmValR);
   lcd_puts(string_lcd);
   lcd_goto(0x40);
-  sprintf(string_lcd, "F: %3u", cmValF);
+  //sprintf(string_lcd, "F: %3u", cmValF);
+  if (automode == 0){sprintf(string_lcd, "AM: OFF F: %3u", cmValF);}
+  else {sprintf(string_lcd, "AM: ON  F: %3u", cmValF);}
   lcd_puts(string_lcd);
 
   }
@@ -144,11 +148,11 @@ ISR(USART2_RX_vect)  // ISR executed whenever a new byte is available in the ser
 	}
 }
 
-ISR(INT0_vect)
+ISR(INT2_vect)
 {
 	uint32_t currTime = milliseconds_now();
 	static uint32_t prevTime = 0;
-	if((currTime-prevTime) < 100)
+	if((currTime-prevTime) > DEBOUNCE_PERIOD)
 	{
 		automode ^= 1;
     prevTime = currTime;
