@@ -78,7 +78,7 @@ int main(void)
 			rsVal_front = adc_read(1); // Front sensor
 			av_front = 0.7 * av_front + 0.3 * rsVal_front;
 			cmVal_front = (2516/av_front);
-			sendDataByte2 = rsVal_front /4;
+			sendDataByte2 = cmVal_front /4;
 			if(sendDataByte2>253)
 			{dataByte2 = 253;}
 	
