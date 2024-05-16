@@ -152,7 +152,7 @@ int main(void)
 			{	
 				OCR3A = 2500;
 				OCR3B = 2500;
-				if(cmVal_front > 10)
+				if(cmVal_front > 8)
 				{
 					//move forward
 					PORTA |= (1<<PA1);
@@ -162,21 +162,21 @@ int main(void)
 					if(cmVal_right < 6)
 					{
 						//veer left
-						OCR3A = 3000;
+						OCR3B = 3000;
 					}
 					if(cmVal_left < 6)
 					{
 						//veer right
-						OCR3B = 3000;
+						OCR3A = 3000;
 					}
 
 				}
-				if(cmVal_front <= 10)
+				if(cmVal_front <= 8)
 				{
 					//stop
 					OCR3A = 0;
 					OCR3B = 0;
-					if(cmVal_front <= 3)
+					if(cmVal_front <= 5)
 					{
 						//move backwards
 						OCR3A = 2500;
@@ -191,7 +191,7 @@ int main(void)
 						OCR3B = 0;	
 						
 					}
-				if(cmVal_front >3)
+				if(cmVal_front >5)
 				{
 					if(cmVal_left > cmVal_right)
 					{
