@@ -7,7 +7,7 @@
 
 //static function prototypes, functions only called in this file
 volatile uint8_t dataByte1=0, dataByte2=0, dataByte3=0, dataByte4 = 0;
-volatile bool new_message_received_flag=false;
+volatile bool new_message_received_flag=true;
 
 int main(void)
 {
@@ -18,24 +18,14 @@ int main(void)
   	milliseconds_init();
   	adc_init();
   	_delay_ms(20);
-	
-	// variables
-	//motors
-	uint16_t fc=0, rc=0;              // Joystick readings received from controller
-  	static int16_t lm=0, rm =0;       // Speed and direction of motors
-   	char serial0_sting[100] = {0};
-	//autonomous
-	bool autonomous_flag= 0;
 
-	//range sensor and serial communication (sending)
-  	uint8_t sendDataByte1=0, sendDataByte2=0,sendDataByte3=0;		// data bytes sent
+	uint8_t sendDataByte1=0, sendDataByte2=0,sendDataByte3=0;		// data bytes sent
   	uint32_t current_ms=0, last_send_ms=0;			// used for timing the serial send
   	uint16_t rsVal_left = 2, rsVal_front = 0, rsVal_right = 0, cmVal_left = 0, cmVal_right = 0, cmVal_front = 0, av_left=0, av_right=0, av_front=0;       // range sensor value
   	uint16_t xl_reading=0;
-
-	//battery checker
-  	uint16_t raw_bat_val = 0; // value for adc read of battery to be stored
-  	uint16_t scale_bat_val = 0; // value for scaled (out of 5) battery value to be stored)
+	char serial0_sting[100] = {0};
+	bool turning = false;
+	bool leftRight = false; // false for left, true for right
 
   	//port initialising
   	DDRA |= 255;      // put PORTA into output mode for motors & battery detector
@@ -64,175 +54,110 @@ int main(void)
 
 	while(1)//main loop
 	{
-    	current_ms = milliseconds_now();
-		//sending range sensor data value section
-		if(current_ms-last_send_ms >= 100) //sending rate controlled here one message every 100ms (10Hz)
+		rsVal_left = adc_read(0); // Left sensor
+		av_left = 0.7 * av_left + 0.3 * rsVal_left;
+		cmVal_left = (2516/av_left);
+		sendDataByte1 = cmVal_left/4;
+		if(sendDataByte1>253)
+		{dataByte1 = 253;}
+
+		rsVal_front = adc_read(1); // Front sensor
+		av_front = 0.7 * av_front + 0.3 * rsVal_front;
+		cmVal_front = (2516/av_front);
+		sendDataByte2 = cmVal_front /4;
+		if(sendDataByte2>253)
+		{dataByte2 = 253;}
+
+		rsVal_right = adc_read(2); // Right sensor
+		av_right = 0.7 * av_right + 0.3 * rsVal_right;
+		cmVal_right = (2516/av_right);
+		sendDataByte3 = cmVal_right / 4;
+		if(sendDataByte3>253)
+		{dataByte3 = 253;}
+
+		if (new_message_received_flag)
 		{
-			rsVal_left = adc_read(0); // Left sensor
-			av_left = 0.7 * av_left + 0.3 * rsVal_left;
-			cmVal_left = (2516/av_left);
-			sendDataByte1 = cmVal_left/4;
-			if(sendDataByte1>253)
-			{dataByte1 = 253;}
-	
-			rsVal_front = adc_read(1); // Front sensor
-			av_front = 0.7 * av_front + 0.3 * rsVal_front;
-			cmVal_front = (2516/av_front);
-			sendDataByte2 = cmVal_front /4;
-			if(sendDataByte2>253)
-			{dataByte2 = 253;}
-	
-			rsVal_right = adc_read(2); // Right sensor
-			av_right = 0.7 * av_right + 0.3 * rsVal_right;
-			cmVal_right = (2516/av_right);
-			sendDataByte3 = cmVal_right / 4;
-			if(sendDataByte3>253)
-			{dataByte3 = 253;}
-	
-			last_send_ms = current_ms;
-			serial2_write_byte(0xFF); 		//send start byte = 255
-			serial2_write_byte(sendDataByte1); 	//send first data byte: must be scaled to the range 0-253
-			serial2_write_byte(sendDataByte2);
-			serial2_write_byte(sendDataByte3);
-			serial2_write_byte(0xFE); 		//send stop byte = 254
-    		}
-		
-		//motor control
-    		if (new_message_received_flag)
-    		{
-      			// Servo
-      			xl_reading = dataByte3 * 4;
-      			compValServo = xl_reading + 1000;
-      			OCR1A = compValServo;
-
-      			// Motor
-      			fc=dataByte1, rc=dataByte2;
-
-      			rm = fc + rc - 253;
-      			lm = fc - rc;
-
-				if (dataByte4 == 0x00) {autonomous_flag = 0;}
-				else {autonomous_flag = 1;}
-
-      			if(autonomous_flag == 0)
-				{
-					OCR3A = (int32_t)abs(lm) * 10000 / 126;
-      				OCR3B = (int32_t)abs(rm) * 10000 / 126;
-
-      				if (lm>=0)
-      				{
-        				// left motor goes forward
-        				PORTA |= (1<<PA0);
-        				PORTA &= ~(1<<PA1);
-      				}
-      				else
-      				{
-        			// left motor goes backward
-        			PORTA &= ~(1<<PA0);
-        			PORTA |= (1<<PA1);
-      				}
-
-      				if (rm>=0)
-      				{
-        				// right motor goes forward
-        				PORTA |= (1<<PA2);
-        				PORTA &= ~(1<<PA3);
-      				}
-      				else
-      				{
-        				// right motor goes backward
-        				PORTA &= ~(1<<PA2);
-        				PORTA |= (1<<PA3);
-      				}
-
-      			
-			}
-			//autonomous funciton
-			else
-			{	
-				OCR3A = 2500;
-				OCR3B = 2500;
-				if(cmVal_front > 8)
+			//OCR3A = 3500;
+			//OCR3B = 3500;
+			if (turning == false)
+			{
+				// WALL FOLLOWING
+				if(cmVal_front > 15)
 				{
 					//move forward
 					PORTA |= (1<<PA1);
-  					PORTA &= ~(1<<PA0);
+					PORTA &= ~(1<<PA0);
 					PORTA |= (1<<PA3);
-        			PORTA &= ~(1<<PA2);
-					if(cmVal_right < 6)
+					PORTA &= ~(1<<PA2);
+
+					//adjust position
+					if (cmVal_right <= 9)
 					{
-						//veer left
-						OCR3B = 3000;
+						// Veer left
+						OCR3B = 6000;
+						OCR3A = 2000;
 					}
-					if(cmVal_left < 6)
+					if (cmVal_left <= 9)
 					{
-						//veer right
-						OCR3A = 3000;
+						OCR3A = 6000;
+						OCR3B = 2000;
+					
+					}
+					if (cmVal_left > 9 && cmVal_right > 9)
+					{
+						OCR3A = 4000;
+						OCR3B = 4000;
 					}
 
 				}
-				if(cmVal_front <= 8)
+				if(cmVal_front <= 15)
 				{
 					//stop
-					OCR3A = 0;
-					OCR3B = 0;
-					if(cmVal_front <= 5)
-					{
-						//move backwards
-						OCR3A = 2500;
-						OCR3B = 2500;
-						PORTA &= ~(1<<PA0);
-  						PORTA |= (1<<PA1);
-						PORTA &= ~(1<<PA2);
-        				PORTA |= (1<<PA3);
-						_delay_ms(10);
-						//stop
-						OCR3A = 0;
-						OCR3B = 0;	
-						
-					}
-				if(cmVal_front >5)
-				{
-					if(cmVal_left > cmVal_right)
-					{
-						PORTA &= ~(1<<PA0);
-  						PORTA |= (1<<PA1);
-						PORTA |= (1<<PA2);
-        				PORTA &= ~(1<<PA3);
-					}
-					if(cmVal_right > cmVal_left)
-	        		{
-						//rotate 90* right ie until av_left = prevav_front then stop
-						PORTA |= (1<<PA0);
-  						PORTA &= ~(1<<PA1);
-						PORTA &= ~(1<<PA2);
-        				PORTA |= (1<<PA3);
-						
-					}
+					PORTA &= ~(1<<PA0);
+					PORTA &= ~(1<<PA1);
+					PORTA &= ~(1<<PA2);
+					PORTA &= ~(1<<PA3);
+
+					// turn
+					turning = true;
+					if (cmVal_left > cmVal_right) {leftRight = false;}
+					else {leftRight = true;}
 				}
 			}
-			new_message_received_flag = false;
-    		}
-  		
+			else
+			{
+				// TURNING 
+				if (cmVal_front > 50)
+				{turning = false;}
+				else if (leftRight == false)
+				{
+					// turn left
+					OCR3A = 3500;
+					OCR3B = 3500;
+					PORTA |= (1<<PA0);
+					PORTA &= ~(1<<PA1);
+					PORTA |= (1<<PA3);
+					PORTA &= ~(1<<PA2);
+				}
+				else{
+					// turn right
+					OCR3A = 3500;
+					OCR3B = 3500;
+					PORTA |= (1<<PA1);
+					PORTA &= ~(1<<PA0);
+					PORTA |= (1<<PA2);
+					PORTA &= ~(1<<PA3);
+				}
+			}
+
+
+			sprintf(serial0_sting, "LEFT: %5ucm     FRONT: %5ucm     RIGHT: %5ucm \n", cmVal_left, cmVal_front, cmVal_right);
+			serial0_print_string(serial0_sting);  // print the received bytes to the USB serial to make sure the right messages are received
 	
-	sprintf(serial0_sting, "LEFT: %5ucm     FRONT: %5ucm     RIGHT: %5ucm \n", cmVal_left, cmVal_front, cmVal_right);
-	serial0_print_string(serial0_sting);  // print the received bytes to the USB serial to make sure the right messages are received
-		
-	//battery checking
-  	raw_bat_val = adc_read(3);
-  	if (raw_bat_val <= 995)
-  	{
-  		PORTA |= (1<<PA5);	
-  	}
-  	else
-  	{
-  		PORTA &= ~(1<<PA5);
-  	}
-  	}
-	}
+			}
+		}
 	return(1);
 }//end main 
-
 
 ISR(USART2_RX_vect)
 {
