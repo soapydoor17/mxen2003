@@ -1,6 +1,8 @@
 // MXEN2003 Robot Project Code
 // Controller.c - code uploaded to the controller system that sends and receives data from the robot system
 
+//include Controller header file
+//set debounce period of 200ms for autonomy toggling button
 #include "Controller.h"
 #define DEBOUNCE_PERIOD 200
 
@@ -50,13 +52,13 @@ int main(void)
 
   while(1) // Main loop
   {
-    // Sending information to robot
+  	// Sending information to robot
     // Taken from MXEN2003 Lab 7 Outline
     current_ms = milliseconds_now();
 
     if (current_ms-last_send_ms >= 100) // Sending rate of 10Hz
     {
-      // Read values from joysticks
+    	// Read values from joysticks
       yr_reading = adc_read(0);
       xr_reading = adc_read(1);
       xl_reading = adc_read(14);
@@ -71,7 +73,7 @@ int main(void)
       if (sendDataByte3 > 253) {sendDataByte3 = 253;}
 
       // sendDataByte4 at min value if autonomy is off
-      // or at max if autonomy is on
+      // or at max if autonomy is on - toggled by INT2_vect interupt
       if (automode == 0) {sendDataByte4 = 0x00;}
       else {sendDataByte4 = 0xFD;}
 
