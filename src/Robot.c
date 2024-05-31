@@ -136,8 +136,8 @@ int main(void)
 			// Right component of joystick reading (rc) increases left motor and decreases right motor
 			// Robot should be stationary when joystick is centered, hence fc and rc should be offset by 253/2
 			fc=dataByte1, rc=dataByte2;
-			rm = fc + rc - 253;
-			lm = fc - rc;
+			lm = fc + rc - 253;
+			rm = fc - rc;
 
 			// Autonomous Mode
 			if (dataByte4 == 0x00) {autonomous_flag = 0;}
