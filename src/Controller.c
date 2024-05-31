@@ -93,7 +93,7 @@ int main(void)
 		if (new_message_received_flag) 
 		{
 			// If new data has been received, as triggered in the USART2_RX 
-			// interrupt convert received data and reset the flag
+			// interrupt convert received data from 8-bit to 10-bit and reset the flag
 			cmValL = (dataByte1 * 4);
 			cmValF = (dataByte2 * 4);
 			cmValR = (dataByte3 * 4);

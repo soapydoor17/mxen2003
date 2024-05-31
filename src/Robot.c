@@ -55,7 +55,7 @@ int main(void)
 	PORTA = 0;				  // PORTA pins originally all off.
 	DDRF = 0;           // PORTF into input mode for range sensor
 
-	// PWM set up for servo
+	// PWM set up for servo - see report for explanation of constants (PAGE?)
 	uint16_t compValServo = 1000;       // Variable to which duty cycle will be assigned to
 	DDRB |= (1<<PB5);                   // Set PB5 to output mode for servo
 	OCR1A = compValServo;               // Initialise comparison values for servo
@@ -64,7 +64,7 @@ int main(void)
 	TCNT1 = 0;                          // Set timer/counter at 0
 	ICR1 = 20000;                       // TOP is 20000
 
-	// PWM Set up for Motors
+	// PWM Set up for Motors - see report for explanation of constants (PAGE?)
 	DDRE |= (1<<PE3)|(1<<PE4);              // PE3 and PE4 to output mode for motors
 	OCR3A = 8000;                           // Set initial speed of left and right motor at 8000
 	OCR3B = 8000;
@@ -86,7 +86,7 @@ int main(void)
 		{
 			// Left sensor
 			// Read the sensor value and add it to the rolling average
-			// Convert to centimenter value accoding to calibration - SEE REPORT!!
+			// Convert to centimenter value accoding to calibration - SEE REPORT!! (PAGE?)
 			// Convert the readings from 10-bit to 8-bit
 			// Keep reading within upper boundary of 253, to not interfere with start and stop byte
 			rsVal_left = adc_read(0);
@@ -126,12 +126,12 @@ int main(void)
 
 			// Servo - Controlled by left joystick on the controller
 			// Times by four to convert from 8-bit to 10-bit
-			// Add 1000 so compValServo is in between 1000 tp 2024
+			// Add 1000 so compValServo is in between 1000 tp 2024 - see report (PAGE?)
 			xl_reading = dataByte3 * 4;
 			compValServo = xl_reading + 1000;
 			OCR1A = compValServo;
 
-			// Motor Speeds - Controlled by right joystick on the controller
+			// Motor Speeds - Controlled by right joystick on the controller - see report (PAGE?)
 			// Forward component of joystick reading (fc) makes both left and right motor (lm and rm) go forward
 			// Right component of joystick reading (rc) increases left motor and decreases right motor
 			// Robot should be stationary when joystick is centered, hence fc and rc should be offset by 253/2
@@ -147,7 +147,7 @@ int main(void)
 			{
 				// MANUAL CONTROL
 
-				// Set speed of motors according to absolute value of the above calculations
+				// Set speed of motors according to absolute value of the above calculations - see report (PAGE?)
 				OCR3A = (int32_t)abs(lm) * 10000 / 126;
 				OCR3B = (int32_t)abs(rm) * 10000 / 126;
 
@@ -268,7 +268,7 @@ int main(void)
 
 		// Battery Monitor
 		// If the adc reading from the batteries is less than or equal to 7V (995 bits)
-		// then turn on the LED (connected to PA5)
+		// then turn on the LED (connected to PA5) - see report (PAGE?)
 		raw_bat_val = adc_read(3);
 		if (raw_bat_val <= 995) {PORTA |= (1<<PA5);}
 		else {PORTA &= ~(1<<PA5);}
