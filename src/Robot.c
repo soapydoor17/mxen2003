@@ -154,27 +154,27 @@ int main(void)
 				if (lm>=0)
 				{
 					// Left motor goes forward if the calculated speed is positive 
-					PORTA |= (1<<PA0);
-					PORTA &= ~(1<<PA1);
+					PORTA |= (1<<PA1);
+					PORTA &= ~(1<<PA0);
 				}
 				else
 				{
 					// Left motor goes backward if the calculated speed is negative
-					PORTA &= ~(1<<PA0);
-					PORTA |= (1<<PA1);
+					PORTA &= ~(1<<PA1);
+					PORTA |= (1<<PA0);
 				}
 
 				if (rm>=0)
 				{
 					// Right motor goes forward if the calculated speed is positive 
-					PORTA |= (1<<PA2);
-					PORTA &= ~(1<<PA3);
+					PORTA |= (1<<PA3);
+					PORTA &= ~(1<<PA2);
 				}
 				else
 				{
 					// Right motor goes backward if the calculated speed is negative
-					PORTA &= ~(1<<PA2);
-					PORTA |= (1<<PA3);
+					PORTA &= ~(1<<PA3);
+					PORTA |= (1<<PA2);
 				}
 			}
 		
